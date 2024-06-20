@@ -9,6 +9,10 @@ clock = pg.time.Clock()
 running = True
 dt = 0
 
+# Load the game's background
+road_background = pg.image.load('main-game contents/Backgrounds/Road_Background.jpg')
+resized_background = pg.transform.scale(road_background, (1280, 720))
+
 # Load the player image
 player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 # player_image = pg.draw.circle(screen, "red", player_pos, 40)  # Placeholder for now
@@ -21,8 +25,8 @@ while running:
         if event.type == pg.QUIT:
             running = False
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("green")
+    # Add the surfaces
+    screen.blit(resized_background, (0, 0))
 
     pg.draw.circle(screen, "red", player_pos, 40)
 
