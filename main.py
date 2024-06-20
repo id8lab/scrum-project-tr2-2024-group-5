@@ -2,19 +2,16 @@ import pygame as pg
 
 # pygame setup
 pg.init()
+
 screen = pg.display.set_mode((1280, 720))
 pg.display.set_caption('Top-Down Race')
 clock = pg.time.Clock()
 running = True
 dt = 0
 
-# player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 # Load the player image
-player_image = pg.image.load("Kanata_Tpose.png")
-player_image = pg.transform.scale(player_image, (60, 77))  # Scale the image to desired size
-
-# Get the rect of the image
-player_rect = player_image.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+# player_image = pg.draw.circle(screen, "red", player_pos, 40)  # Placeholder for now
 
 
 while running:
@@ -27,18 +24,17 @@ while running:
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("green")
 
-    # pygame.draw.circle(screen, "black", player_pos, 60)
-    screen.blit(player_image, player_rect.topleft)
+    pg.draw.circle(screen, "red", player_pos, 40)
 
     keys = pg.key.get_pressed()
     if keys[pg.K_w]:
-        player_rect.y -= 300 * dt
+        player_pos.y -= 500 * dt
     if keys[pg.K_s]:
-        player_rect.y += 300 * dt
+        player_pos.y += 100 * dt
     if keys[pg.K_a]:
-        player_rect.x -= 300 * dt
+        player_pos.x -= 300 * dt
     if keys[pg.K_d]:
-        player_rect.x += 300 * dt
+        player_pos.x += 300 * dt
 
     # flip() the display to put your work on screen
     pg.display.flip()
