@@ -17,7 +17,7 @@ resized_background = pg.transform.scale(road_background, (1280, 720))
 # Load the player image
 player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 player_image = pg.image.load("main-game contents/Vehicles/supercar4.png")
-player_image = pg.transform.scale(player_image, (60, 77))  # Scale the image to desired size
+player_image = pg.transform.scale(player_image, (200, 200))  # Scale the image to desired size
 
 
 while running:
@@ -29,7 +29,7 @@ while running:
 
     # Add the surfaces
     screen.blit(resized_background, (0, 0))
-    screen.blit(player_image, (0, 0))
+    screen.blit(player_image, player_pos)
 
     keys = pg.key.get_pressed()
     if keys[pg.K_w]:
