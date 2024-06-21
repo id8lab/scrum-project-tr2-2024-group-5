@@ -9,12 +9,6 @@ clock = pg.time.Clock()
 running = True
 dt = 0
 
-
-# player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
-# Load the player image
-player_image = pg.image.load("main-game contents/Vehicles/supercar4.png")
-player_image = pg.transform.scale(player_image, (60, 77))  # Scale the image to desired size
-=======
 # Load the game's background
 road_background = pg.image.load('main-game contents/Backgrounds/Road_Background.jpg')
 resized_background = pg.transform.scale(road_background, (1280, 720))
@@ -22,7 +16,8 @@ resized_background = pg.transform.scale(road_background, (1280, 720))
 
 # Load the player image
 player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
-# player_image = pg.draw.circle(screen, "red", player_pos, 40)  # Placeholder for now
+player_image = pg.image.load("main-game contents/Vehicles/supercar4.png")
+player_image = pg.transform.scale(player_image, (60, 77))  # Scale the image to desired size
 
 
 while running:
@@ -34,8 +29,7 @@ while running:
 
     # Add the surfaces
     screen.blit(resized_background, (0, 0))
-
-    pg.draw.circle(screen, "red", player_pos, 40)
+    screen.blit(player_image, (0, 0))
 
     keys = pg.key.get_pressed()
     if keys[pg.K_w]:
