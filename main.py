@@ -10,7 +10,7 @@ dt = 0
 
 # player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 # Load the player image
-player_image = pg.image.load("Kanata_Tpose.png")
+player_image = pg.image.load("main-game contents/Vehicles/supercar4.png")
 player_image = pg.transform.scale(player_image, (60, 77))  # Scale the image to desired size
 
 # Get the rect of the image
