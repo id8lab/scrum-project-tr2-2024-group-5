@@ -74,9 +74,9 @@ while running:
     # Player movement
     keys = pg.key.get_pressed()
     if keys[pg.K_w]:
-        player_pos.y -= 500 * dt
+        player_pos.y -= 400 * dt
     if keys[pg.K_s]:
-        player_pos.y += 100 * dt
+        player_pos.y += 200 * dt
     if keys[pg.K_a]:
         player_pos.x -= 300 * dt
     if keys[pg.K_d]:
