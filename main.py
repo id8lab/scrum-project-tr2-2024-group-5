@@ -27,6 +27,9 @@ player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 player_image = pg.image.load("main-game contents/Vehicles/supercar4.png")
 player_image = pg.transform.scale(player_image, (200, 200))  # Scale the image to desired size
 
+# Load the background game sound
+pg.mixer.Sound("main-game contents/Audio/bgm1.mp3").play()
+
 
 def draw_background():
     screen.blit(resized_background, (0, background_road_pos_y1))
