@@ -1,7 +1,11 @@
 import pygame as pg
+import random
 
 # Pygame setup
 pg.init()
+bgm = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3", "main-game contents/Audio/bgm3.mp3",
+       "main-game contents/Audio/bgm4.mp3"]
+bgm_play_track = random.randint(0, 3)
 
 screen = pg.display.set_mode((1280, 720))
 pg.display.set_caption('Top-Down Race')
@@ -28,7 +32,8 @@ player_image = pg.image.load("main-game contents/Vehicles/supercar4.png")
 player_image = pg.transform.scale(player_image, (200, 200))  # Scale the image to desired size
 
 # Load the background game sound
-pg.mixer.Sound("main-game contents/Audio/bgm1.mp3").play()
+bgm_play = pg.mixer.Sound(bgm[bgm_play_track]).play(-1)
+bgm_play.set_volume(0.6)
 
 
 def draw_background():
