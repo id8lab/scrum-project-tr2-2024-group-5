@@ -56,8 +56,8 @@ while running:
 
     # Add the surfaces
     draw_background()
-    draw_trees()
     screen.blit(player_image, player_pos)
+    draw_trees()
 
     # Update positions for scrolling effect
     scroll_speed = 18  # Increase this value to make it faster
