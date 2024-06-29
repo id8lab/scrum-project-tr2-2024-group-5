@@ -1,51 +1,39 @@
-import pygame as pg
+import pygame
+import time
 
-# pygame setup
-pg.init()
-screen = pg.display.set_mode((1280, 720))
-pg.display.set_caption('Top-Down Race')
-clock = pg.time.Clock()
+
+pygame.init()
+
+
+start_sound = pygame.mixer.Sound('main-game contents/Voices/motor start.wav')
+brake_sound = pygame.mixer.Sound('main-game contents/Voices/motor stop.wav')
+
+
+screen = pygame.display.set_mode((800, 600))
+pygame.display.set_caption('Car Sound Effects')
+
 running = True
-dt = 0
-
-# player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
-# Load the player image
-player_image = pg.image.load("main-game contents/Vehicles/supercar4.png")
-player_image = pg.transform.scale(player_image, (60, 77))  # Scale the image to desired size
-
-# Get the rect of the image
-player_rect = player_image.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
-
+sound_played = {'start': False, 'brake': False}
 
 while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_w and not sound_played['start']:
+                pygame.mixer.stop()
+                start_sound.play()
+                sound_played['start'] = True
+            elif event.key == pygame.K_s and not sound_played['brake']:
+                pygame.mixer.stop()
+                brake_sound.play()
+                sound_played['brake'] = True
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("green")
+    screen.fill((0, 0, 0))
 
-    # pygame.draw.circle(screen, "black", player_pos, 60)
-    screen.blit(player_image, player_rect.topleft)
+    pygame.display.flip()
 
-    keys = pg.key.get_pressed()
-    if keys[pg.K_w]:
-        player_rect.y -= 300 * dt
-    if keys[pg.K_s]:
-        player_rect.y += 300 * dt
-    if keys[pg.K_a]:
-        player_rect.x -= 300 * dt
-    if keys[pg.K_d]:
-        player_rect.x += 300 * dt
+    time.sleep(0.1)
 
-    # flip() the display to put your work on screen
-    pg.display.flip()
 
-    # limits FPS to 60
-    # dt is delta time in seconds since last frame, used for framerate-
-    # independent physics.
-    dt = clock.tick(60) / 1000
-
-pg.quit()
+pygame.quit()
