@@ -1,6 +1,31 @@
 import pygame as pg
 import random
 
+
+class Score:
+    def __init__(self, font_name='Arial', font_size=50, color=(255, 255, 255), initial_score=0):
+        self.score = initial_score
+        self.font = pg.font.SysFont(font_name, font_size)
+        self.color = color
+        self.last_update_time = pg.time.get_ticks()
+
+    def update(self, current_time, increment=1, interval=1000):
+        # Increment the score if enough time has passed
+        if current_time - self.last_update_time >= interval:
+            self.score += increment
+            self.last_update_time = current_time
+
+    def draw(self, screen, x=10, y=10):
+        # Render the score as a surface
+        score_surface = self.font.render(f'Score: {self.score}', True, self.color)
+        # Draw the score on the screen at position (x, y)
+        screen.blit(score_surface, (x, y))
+
+    def reset(self):
+        self.score = 0
+        self.last_update_time = pg.time.get_ticks()
+
+
 def main():
     # Pygame setup
     pg.init()
@@ -16,6 +41,7 @@ def main():
     # Load the game's background
     road_background = pg.image.load('main-game contents/Backgrounds/Road_Background.jpg')
     resized_background = pg.transform.scale(road_background, (1290, 723))
+    score = Score()
     # Load the tree props
     tree_props_1 = pg.image.load('main-game contents/Backgrounds/Bunch_of_Trees1.png')
     # Initial positions
@@ -52,6 +78,9 @@ def main():
         draw_background()
         screen.blit(player_image, player_pos)
         draw_trees()
+        score.draw(screen)
+        current_time = pg.time.get_ticks()
+        score.update(current_time, increment=1, interval=500)
 
         # Update positions for scrolling effect
         scroll_speed = 18  # Increase this value to make it faster
