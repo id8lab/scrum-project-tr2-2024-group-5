@@ -1,6 +1,15 @@
 import pygame as pg
 import random
 
+OBSTACLES = ["main-game contents/Obstacles/crate.png", "main-game contents/Vehicles/roadster2.png"
+             "main-game contents/Vehicles/supercar4.png", "main-game contents/Vehicles/SUV1.png"]
+VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
+            "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png",
+            "main-game contents/Vehicles/supercar1.png", "main-game contents/Vehicles/supercar2.png",
+            "main-game contents/Vehicles/supercar3.png", "main-game contents/Vehicles/supercar4.png",
+            "main-game contents/Vehicles/SUV1.png", "main-game contents/Vehicles/SUV2.png",
+            "main-game contents/Vehicles/SUV3.png", "main-game contents/Vehicles/SUV4.png"]
+
 
 class Score:
     def __init__(self, font_name='Arial', font_size=50, color=(255, 255, 255), initial_score=0):
@@ -32,7 +41,8 @@ def main():
     bgm = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
            "main-game contents/Audio/bgm3.mp3",
            "main-game contents/Audio/bgm4.mp3"]
-    bgm_play_track = random.randint(0, 3)
+    bgm_play_track = random.choice(bgm)
+    vehicle_choice = random.choice(VEHICLES)
     screen = pg.display.set_mode((1280, 720))
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
@@ -51,10 +61,10 @@ def main():
     tree_props_pos_y2 = -723
     # Load the player image
     player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
-    player_image = pg.image.load("main-game contents/Vehicles/supercar4.png")
+    player_image = pg.image.load(vehicle_choice)
     player_image = pg.transform.scale(player_image, (200, 200))  # Scale the image to desired size
     # Load the background game sound
-    bgm_play = pg.mixer.Sound(bgm[bgm_play_track]).play(-1)
+    bgm_play = pg.mixer.Sound(bgm_play_track).play(-1)
     bgm_play.set_volume(0.6)
 
     def draw_background():
@@ -109,6 +119,10 @@ def main():
             player_pos.x -= 300 * dt
         if keys[pg.K_d]:
             player_pos.x += 300 * dt
+        if keys[pg.K_l]:
+            vehicle_choice = random.choice(VEHICLES)
+            player_image = pg.image.load(vehicle_choice)
+            player_image = pg.transform.scale(player_image, (200, 200))
 
         # Flip the display to put your work on screen
         pg.display.flip()
