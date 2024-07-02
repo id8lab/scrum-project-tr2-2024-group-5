@@ -109,7 +109,7 @@ def main():
         if tree_props_pos_y2 >= 723:
             tree_props_pos_y2 = -723
 
-        # Player movement
+        # Player controls
         keys = pg.key.get_pressed()
         if keys[pg.K_w]:
             player_pos.y -= 400 * dt
