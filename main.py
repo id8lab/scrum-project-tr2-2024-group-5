@@ -1,8 +1,8 @@
 import pygame as pg
 import random
 
-OBSTACLES = ["main-game contents/Obstacles/crate.png", "main-game contents/Vehicles/roadster2.png"
-             "main-game contents/Vehicles/supercar4.png", "main-game contents/Vehicles/SUV1.png"]
+OBSTACLES = ["main-game contents/Backgrounds/Mood.png", "main-game contents/Backgrounds/Axe.png",
+             "main-game contents/Backgrounds/Stone.png"]
 VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
             "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png",
             "main-game contents/Vehicles/supercar1.png", "main-game contents/Vehicles/supercar2.png",
@@ -20,7 +20,7 @@ class Score:
 
     def update(self, current_time, increment=1, interval=1000):
         # Increment the score if enough time has passed
-        if current_time - self.last_update_time >= interval:
+        if (current_time - self.last_update_time) >= interval:
             self.score += increment
             self.last_update_time = current_time
 
@@ -33,6 +33,24 @@ class Score:
     def reset(self):
         self.score = 0
         self.last_update_time = pg.time.get_ticks()
+
+
+class Player:
+    def __init__(self, image_path, start_pos):
+        self.image = pg.image.load(image_path)
+        self.image = pg.transform.scale(self.image, (150, 150))  # Scale the image to 100x100 pixels
+        self.pos = pg.Vector2(start_pos)
+        self.health = 3
+
+    def draw(self, screen):
+        screen.blit(self.image, self.pos)
+
+    def get_rect(self):
+        return self.image.get_rect(topleft=self.pos)
+
+    def reduce_health(self):
+        self.health -= 1
+        return self.health
 
 
 def main():
@@ -60,12 +78,16 @@ def main():
     tree_props_pos_y1 = 0
     tree_props_pos_y2 = -723
     # Load the player image
-    player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
-    player_image = pg.image.load(vehicle_choice)
-    player_image = pg.transform.scale(player_image, (200, 200))  # Scale the image to desired size
+    player = Player(vehicle_choice, (screen.get_width() / 2, screen.get_height() / 2))
     # Load the background game sound
     bgm_play = pg.mixer.Sound(bgm_play_track).play(-1)
     bgm_play.set_volume(0.6)
+
+    # Load obstacle images and scale them down
+    obstacle_images = [pg.transform.scale(pg.image.load(obstacle), (50, 50)) for obstacle in OBSTACLES]
+    # List to store active obstacles
+    obstacles = []
+    obstacle_spawn_time = pg.time.get_ticks()
 
     def draw_background():
         screen.blit(resized_background, (0, background_road_pos_y1))
@@ -77,6 +99,11 @@ def main():
         screen.blit(tree_props_1, (-500, tree_props_pos_y2))
         screen.blit(tree_props_1, (700, tree_props_pos_y2))
 
+    def spawn_obstacle():
+        obstacle_image = random.choice(obstacle_images)
+        obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(0, screen.get_width()), -50))
+        obstacles.append((obstacle_image, obstacle_rect))
+
     # This is where the game runs
     while running:
         # Poll for events
@@ -86,11 +113,31 @@ def main():
 
         # Add the surfaces
         draw_background()
-        screen.blit(player_image, player_pos)
+        player.draw(screen)
         draw_trees()
         score.draw(screen)
         current_time = pg.time.get_ticks()
         score.update(current_time, increment=1, interval=500)
+
+        # Spawn obstacles periodically
+        if (current_time - obstacle_spawn_time) >= 3000:
+            spawn_obstacle()
+            obstacle_spawn_time = current_time
+
+        # Move obstacles and detect collisions
+        for obstacle_image, obstacle_rect in obstacles:
+            obstacle_rect.y += 5
+            # If obstacle moves off the screen, reset its position
+            if obstacle_rect.top > screen.get_height():
+                obstacle_rect.midtop = (random.randint(0, screen.get_width()), -50)
+            screen.blit(obstacle_image, obstacle_rect)
+            if obstacle_rect.colliderect(player.get_rect()):
+                player.reduce_health()
+                print(f"Collision detected! Health: {player.health}")
+                if player.health <= 0:
+                    running = False
+                # Reset the obstacle position to simulate it falling again
+                obstacle_rect.midtop = (random.randint(0, screen.get_width()), -50)
 
         # Update positions for scrolling effect
         scroll_speed = 18  # Increase this value to make it faster
@@ -112,17 +159,17 @@ def main():
         # Player controls
         keys = pg.key.get_pressed()
         if keys[pg.K_w]:
-            player_pos.y -= 400 * dt
+            player.pos.y -= 400 * dt
         if keys[pg.K_s]:
-            player_pos.y += 200 * dt
+            player.pos.y += 200 * dt
         if keys[pg.K_a]:
-            player_pos.x -= 300 * dt
+            player.pos.x -= 300 * dt
         if keys[pg.K_d]:
-            player_pos.x += 300 * dt
+            player.pos.x += 300 * dt
         if keys[pg.K_l]:
             vehicle_choice = random.choice(VEHICLES)
-            player_image = pg.image.load(vehicle_choice)
-            player_image = pg.transform.scale(player_image, (200, 200))
+            player.image = pg.image.load(vehicle_choice)
+            player.image = pg.transform.scale(player.image, (200, 200))  # Scale the image to 100x100 pixels
 
         # Flip the display to put your work on screen
         pg.display.flip()
