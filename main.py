@@ -1,7 +1,8 @@
 import pygame as pg
 import random
 
-OBSTACLES = ["main-game contents/Obstacles/crate.png", "main-game contents/Vehicles/roadster2.png"
+# Paths to game contents
+OBSTACLES = ["main-game contents/Obstacles/crate.png", "main-game contents/Vehicles/roadster2.png",
              "main-game contents/Vehicles/supercar4.png", "main-game contents/Vehicles/SUV1.png"]
 VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
             "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png",
@@ -9,6 +10,28 @@ VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Veh
             "main-game contents/Vehicles/supercar3.png", "main-game contents/Vehicles/supercar4.png",
             "main-game contents/Vehicles/SUV1.png", "main-game contents/Vehicles/SUV2.png",
             "main-game contents/Vehicles/SUV3.png", "main-game contents/Vehicles/SUV4.png"]
+
+# Sound paths for vehicles and movements
+VEHICLE_SOUNDS = [
+    "main-game contents/Audio/motorbike.mp3",
+    "main-game contents/Audio/supercar.mp3",
+    "main-game contents/Audio/roadster.mp3",
+    "main-game contents/Audio/suv.mp3"
+]
+
+MOVEMENT_SOUNDS = {
+    "w": "main-game contents/Audio/motorbike.mp3",
+    "a": "main-game contents/Audio/motorbike.mp3",
+    "d": "main-game contents/Audio/motorbike.mp3",
+    "s": "main-game contents/Audio/motor stop.mp3"
+}
+
+# Background music paths
+bgm = ["main-game contents/Audio/bgm1.mp3",
+       "main-game contents/Audio/bgm2.mp3",
+       "main-game contents/Audio/bgm3.mp3",
+       "main-game contents/Audio/bgm4.mp3"
+]
 
 
 class Score:
@@ -19,15 +42,12 @@ class Score:
         self.last_update_time = pg.time.get_ticks()
 
     def update(self, current_time, increment=1, interval=1000):
-        # Increment the score if enough time has passed
         if current_time - self.last_update_time >= interval:
             self.score += increment
             self.last_update_time = current_time
 
     def draw(self, screen, x=10, y=10):
-        # Render the score as a surface
         score_surface = self.font.render(f'Score: {self.score}', True, self.color)
-        # Draw the score on the screen at position (x, y)
         screen.blit(score_surface, (x, y))
 
     def reset(self):
@@ -35,71 +55,121 @@ class Score:
         self.last_update_time = pg.time.get_ticks()
 
 
+class BackgroundMusic:
+    def __init__(self, bgm_paths):
+        self.bgm_paths = bgm_paths
+        self.current_bgm = None
+
+    def play_random(self):
+        bgm_play_track = random.choice(self.bgm_paths)
+        print(f"Playing BGM: {bgm_play_track}")
+        self.current_bgm = pg.mixer.music.load(bgm_play_track)
+        pg.mixer.music.play(-1)  # -1 means loop indefinitely
+        pg.mixer.music.set_volume(0.4)  # Adjust volume here
+
+    def stop(self):
+        pg.mixer.music.stop()
+
+
+class MovementSounds:
+    def __init__(self, move_sounds_paths):
+        self.move_channels = {key: pg.mixer.Channel(i) for i, key in enumerate(move_sounds_paths.keys())}
+        self.move_sounds = {key: pg.mixer.Sound(path) for key, path in move_sounds_paths.items()}
+
+        # Set volume for each sound effect
+        for sound in self.move_sounds.values():
+            sound.set_volume(1)  # Adjust volume here
+
+    def play(self, key):
+        if key in self.move_channels:
+            self.move_channels[key].play(self.move_sounds[key])
+
+    def stop(self, key):
+        if key in self.move_channels:
+            self.move_channels[key].stop()
+
+    def stop_all(self):
+        for channel in self.move_channels.values():
+            channel.stop()
+
+
 def main():
-    # Pygame setup
     pg.init()
-    bgm = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
-           "main-game contents/Audio/bgm3.mp3",
-           "main-game contents/Audio/bgm4.mp3"]
-    bgm_play_track = random.choice(bgm)
-    vehicle_choice = random.choice(VEHICLES)
     screen = pg.display.set_mode((1280, 720))
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
     running = True
     dt = 0
-    # Load the game's background
+
+    pg.mixer.init()
+
+    # Load game background
     road_background = pg.image.load('main-game contents/Backgrounds/Road_Background.jpg')
     resized_background = pg.transform.scale(road_background, (1290, 723))
     score = Score()
-    # Load the tree props
+
+    # Load tree props
     tree_props_1 = pg.image.load('main-game contents/Backgrounds/Bunch_of_Trees1.png')
     # Initial positions
     background_road_pos_y1 = 0
     background_road_pos_y2 = -723
     tree_props_pos_y1 = 0
     tree_props_pos_y2 = -723
-    # Load the player image
+    # Load player image
+    vehicle_choice = random.choice(VEHICLES)
     player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
     player_image = pg.image.load(vehicle_choice)
-    player_image = pg.transform.scale(player_image, (200, 200))  # Scale the image to desired size
-    # Load the background game sound
-    bgm_play = pg.mixer.Sound(bgm_play_track).play(-1)
-    bgm_play.set_volume(0.6)
+    player_image = pg.transform.scale(player_image, (200, 200))  # Scale image
 
-    def draw_background():
+    bgm_manager = BackgroundMusic(bgm)
+    movement_sounds = MovementSounds(MOVEMENT_SOUNDS)
+
+    # Play background music
+    bgm_manager.play_random()
+
+    while running:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                running = False
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_w:
+                    movement_sounds.play("w")
+                elif event.key == pg.K_a:
+                    movement_sounds.play("a")
+                elif event.key == pg.K_s:
+                    movement_sounds.play("s")
+                elif event.key == pg.K_d:
+                    movement_sounds.play("d")
+            elif event.type == pg.KEYUP:
+                if event.key == pg.K_w:
+                    movement_sounds.stop("w")
+                elif event.key == pg.K_a:
+                    movement_sounds.stop("a")
+                elif event.key == pg.K_s:
+                    movement_sounds.stop("s")
+                elif event.key == pg.K_d:
+                    movement_sounds.stop("d")
+
+        # Render elements
         screen.blit(resized_background, (0, background_road_pos_y1))
         screen.blit(resized_background, (0, background_road_pos_y2))
-
-    def draw_trees():
+        screen.blit(player_image, player_pos)
         screen.blit(tree_props_1, (-500, tree_props_pos_y1))
         screen.blit(tree_props_1, (700, tree_props_pos_y1))
         screen.blit(tree_props_1, (-500, tree_props_pos_y2))
         screen.blit(tree_props_1, (700, tree_props_pos_y2))
-
-    # This is where the game runs
-    while running:
-        # Poll for events
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                running = False
-
-        # Add the surfaces
-        draw_background()
-        screen.blit(player_image, player_pos)
-        draw_trees()
         score.draw(screen)
         current_time = pg.time.get_ticks()
         score.update(current_time, increment=1, interval=500)
 
-        # Update positions for scrolling effect
-        scroll_speed = 18  # Increase this value to make it faster
+        # Scroll effect
+        scroll_speed = 18
         background_road_pos_y1 += scroll_speed
         background_road_pos_y2 += scroll_speed
         tree_props_pos_y1 += scroll_speed
         tree_props_pos_y2 += scroll_speed
 
-        # Reset positions once off-screen to create continuous loop
+        # Reset positions
         if background_road_pos_y1 >= 723:
             background_road_pos_y1 = -723
         if background_road_pos_y2 >= 723:
@@ -109,7 +179,7 @@ def main():
         if tree_props_pos_y2 >= 723:
             tree_props_pos_y2 = -723
 
-        # Player controls
+        # Player movement
         keys = pg.key.get_pressed()
         if keys[pg.K_w]:
             player_pos.y -= 400 * dt
@@ -119,17 +189,27 @@ def main():
             player_pos.x -= 300 * dt
         if keys[pg.K_d]:
             player_pos.x += 300 * dt
+
+        # Stop sounds when no movement
+        if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
+            movement_sounds.stop_all()
+
+        # Change vehicle image (testing)
         if keys[pg.K_l]:
             vehicle_choice = random.choice(VEHICLES)
             player_image = pg.image.load(vehicle_choice)
             player_image = pg.transform.scale(player_image, (200, 200))
 
-        # Flip the display to put your work on screen
+        # Update screen
         pg.display.flip()
 
-        # Limit FPS to 60
+        # Cap FPS
         dt = clock.tick(60) / 1000
+
+    # Cleanup
+    movement_sounds.stop_all()
+    bgm_manager.stop()
     pg.quit()
 
-
-main()
+if __name__ == "__main__":
+    main()
