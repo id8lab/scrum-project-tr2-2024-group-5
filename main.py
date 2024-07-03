@@ -1,7 +1,8 @@
 import pygame as pg
 import random
 
-OBSTACLES = ["main-game contents/Backgrounds/Mood.png", "main-game contents/Backgrounds/Axe.png",
+
+OBSTACLES = ["main-game contents/Backgrounds/Wood.png", "main-game contents/Backgrounds/Axe.png",
              "main-game contents/Backgrounds/Stone.png"]
 VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
             "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png",
