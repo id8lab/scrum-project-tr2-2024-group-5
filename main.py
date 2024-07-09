@@ -78,6 +78,9 @@ def main():
     background_road_pos_y2 = -723
     tree_props_pos_y1 = 0
     tree_props_pos_y2 = -723
+    obstacle_x_pos_1 = 390
+    obstacle_x_pos_2 = 900
+
     # Load the player image
     player = Player(vehicle_choice, (screen.get_width() / 2, screen.get_height() / 2))
     # Load the background game sound
@@ -92,7 +95,7 @@ def main():
 
     # Load the mud puddle image and set initial position and spawn time
     mud_puddle_image = pg.image.load('main-game contents/Obstacles/Mud.png').convert_alpha()
-    mud_puddle_image = pg.transform.scale(mud_puddle_image, (100, 50))
+    mud_puddle_image = pg.transform.scale(mud_puddle_image, (100, 100))
     mud_puddle_rect = mud_puddle_image.get_rect(midtop=(screen.get_width() // 2, -50))
     mud_puddle_spawn_time = pg.time.get_ticks()
 
@@ -110,11 +113,11 @@ def main():
 
     def spawn_obstacle():
         obstacle_image = random.choice(obstacle_images)
-        obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(0, screen.get_width()), -50))
+        obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
         obstacles.append((obstacle_image, obstacle_rect))
 
     def spawn_mud_puddle():
-        mud_puddle_rect.midtop = (random.randint(300, 900), -50)  # Random x position within specific range
+        mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)  # Random x position within specific range
 
     # This is where the game runs
     while running:
@@ -142,7 +145,7 @@ def main():
             obstacle_rect.y += 5
             # If obstacle moves off the screen, reset its position
             if obstacle_rect.top > screen.get_height():
-                obstacle_rect.midtop = (random.randint(0, screen.get_width()), -50)
+                obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
             screen.blit(obstacle_image, obstacle_rect)
             if obstacle_rect.colliderect(player.get_rect()):
                 player.reduce_health()
@@ -150,7 +153,7 @@ def main():
                 if player.health <= 0:
                     running = False
                 # Reset the obstacle position to simulate it falling again
-                obstacle_rect.midtop = (random.randint(0, screen.get_width()), -50)
+                obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
         # Spawn and move the mud puddle
         if (current_time - mud_puddle_spawn_time) >= 5000:  # Spawn a mud puddle every 5 seconds
@@ -159,7 +162,7 @@ def main():
 
         mud_puddle_rect.y += 5  # Move the mud puddle
         if mud_puddle_rect.top > screen.get_height():
-            mud_puddle_rect.midtop = (random.randint(300, 900), -50)  # Reset mud puddle position
+            mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)  # Reset mud puddle position
         player_slowed = mud_puddle_rect.colliderect(player.get_rect())  # Check for collision with mud puddle
 
         # Update positions for scrolling effect
