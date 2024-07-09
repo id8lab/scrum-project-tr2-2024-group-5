@@ -38,7 +38,7 @@ class Score:
 
 class Player:
     def __init__(self, image_path, start_pos):
-        self.image = pg.image.load(image_path)
+        self.image = pg.image.load(image_path).convert_alpha()
         self.image = pg.transform.scale(self.image, (150, 150))  # Scale the image to 100x100 pixels
         self.pos = pg.Vector2(start_pos)
         self.health = 3
@@ -90,6 +90,14 @@ def main():
     obstacles = []
     obstacle_spawn_time = pg.time.get_ticks()
 
+    # Load the mud puddle image and set initial position and spawn time
+    mud_puddle_image = pg.image.load('main-game contents/Obstacles/Mud.png').convert_alpha()
+    mud_puddle_image = pg.transform.scale(mud_puddle_image, (100, 50))
+    mud_puddle_rect = mud_puddle_image.get_rect(midtop=(screen.get_width() // 2, -50))
+    mud_puddle_spawn_time = pg.time.get_ticks()
+
+    speed_reduction_factor = 0.2  # Reduce speed by 50%
+
     def draw_background():
         screen.blit(resized_background, (0, background_road_pos_y1))
         screen.blit(resized_background, (0, background_road_pos_y2))
@@ -104,6 +112,9 @@ def main():
         obstacle_image = random.choice(obstacle_images)
         obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(0, screen.get_width()), -50))
         obstacles.append((obstacle_image, obstacle_rect))
+
+    def spawn_mud_puddle():
+        mud_puddle_rect.midtop = (random.randint(300, 900), -50)  # Random x position within specific range
 
     # This is where the game runs
     while running:
@@ -140,6 +151,18 @@ def main():
                 # Reset the obstacle position to simulate it falling again
                 obstacle_rect.midtop = (random.randint(0, screen.get_width()), -50)
 
+        # Spawn and move the mud puddle
+        if (current_time - mud_puddle_spawn_time) >= 5000:  # Spawn a mud puddle every 5 seconds
+            spawn_mud_puddle()
+            mud_puddle_spawn_time = current_time
+
+        mud_puddle_rect.y += 5  # Move the mud puddle
+        if mud_puddle_rect.top > screen.get_height():
+            mud_puddle_rect.midtop = (random.randint(300, 900), -50)  # Reset mud puddle position
+
+        screen.blit(mud_puddle_image, mud_puddle_rect)
+        player_slowed = mud_puddle_rect.colliderect(player.get_rect())  # Check for collision with mud puddle
+
         # Update positions for scrolling effect
         scroll_speed = 18  # Increase this value to make it faster
         background_road_pos_y1 += scroll_speed
@@ -159,18 +182,24 @@ def main():
 
         # Player controls
         keys = pg.key.get_pressed()
+
+        if player_slowed:
+            speed_modifier = speed_reduction_factor  # Apply the speed reduction factor
+        else:
+            speed_modifier = 1
+
         if keys[pg.K_w]:
-            player.pos.y -= 400 * dt
+            player.pos.y -= 400 * dt * speed_modifier
         if keys[pg.K_s]:
-            player.pos.y += 200 * dt
+            player.pos.y += 200 * dt * speed_modifier
         if keys[pg.K_a]:
-            player.pos.x -= 300 * dt
+            player.pos.x -= 300 * dt * speed_modifier
         if keys[pg.K_d]:
-            player.pos.x += 300 * dt
+            player.pos.x += 300 * dt * speed_modifier
         if keys[pg.K_l]:
             vehicle_choice = random.choice(VEHICLES)
-            player.image = pg.image.load(vehicle_choice)
-            player.image = pg.transform.scale(player.image, (200, 200))  # Scale the image to 100x100 pixels
+            player.image = pg.image.load(vehicle_choice).convert_alpha()
+            player.image = pg.transform.scale(player.image, (150, 150))  # Scale the image to 150x150 pixels
 
         # Flip the display to put your work on screen
         pg.display.flip()
