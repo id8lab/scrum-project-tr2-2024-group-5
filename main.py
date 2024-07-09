@@ -125,6 +125,7 @@ def main():
 
         # Add the surfaces
         draw_background()
+        screen.blit(mud_puddle_image, mud_puddle_rect)
         player.draw(screen)
         draw_trees()
         score.draw(screen)
@@ -159,8 +160,6 @@ def main():
         mud_puddle_rect.y += 5  # Move the mud puddle
         if mud_puddle_rect.top > screen.get_height():
             mud_puddle_rect.midtop = (random.randint(300, 900), -50)  # Reset mud puddle position
-
-        screen.blit(mud_puddle_image, mud_puddle_rect)
         player_slowed = mud_puddle_rect.colliderect(player.get_rect())  # Check for collision with mud puddle
 
         # Update positions for scrolling effect
