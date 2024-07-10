@@ -1,7 +1,6 @@
 import pygame as pg
 import random
 
-
 OBSTACLES = ["main-game contents/Obstacles/Wood.png", "main-game contents/Obstacles/Axe.png",
              "main-game contents/Obstacles/Stone.png"]
 VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
@@ -10,6 +9,23 @@ VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Veh
             "main-game contents/Vehicles/supercar3.png", "main-game contents/Vehicles/supercar4.png",
             "main-game contents/Vehicles/SUV1.png", "main-game contents/Vehicles/SUV2.png",
             "main-game contents/Vehicles/SUV3.png", "main-game contents/Vehicles/SUV4.png"]
+
+VEHICLE_SOUNDS = [
+    "main-game contents/Audio/motorbike.mp3",
+    "main-game contents/Audio/supercar.mp3",
+    "main-game contents/Audio/roadster.mp3",
+    "main-game contents/Audio/suv.mp3"
+]
+
+MOVEMENT_SOUNDS = {
+    "w": "main-game contents/Audio/motorbike.mp3",
+    "a": "main-game contents/Audio/motorbike.mp3",
+    "d": "main-game contents/Audio/motorbike.mp3",
+    "s": "main-game contents/Audio/motor stop.mp3"
+}
+bgm = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
+           "main-game contents/Audio/bgm3.mp3",
+           "main-game contents/Audio/bgm4.mp3"]
 
 
 class Score:
@@ -54,12 +70,47 @@ class Player:
         return self.health
 
 
+class BackgroundMusic:
+    def __init__(self, bgm_paths):
+        self.bgm_paths = bgm_paths
+        self.current_bgm = None
+
+    def play_random(self):
+        bgm_play_track = random.choice(self.bgm_paths)
+        print(f"Playing BGM: {bgm_play_track}")
+        self.current_bgm = pg.mixer.music.load(bgm_play_track)
+        pg.mixer.music.play(-1)  # -1 means loop indefinitely
+        pg.mixer.music.set_volume(0.4)  # Adjust volume here
+
+    def stop(self):
+        pg.mixer.music.stop()
+
+
+class MovementSounds:
+    def __init__(self, move_sounds_paths):
+        self.move_channels = {key: pg.mixer.Channel(i) for i, key in enumerate(move_sounds_paths.keys())}
+        self.move_sounds = {key: pg.mixer.Sound(path) for key, path in move_sounds_paths.items()}
+
+        # Set volume for each sound effect
+        for sound in self.move_sounds.values():
+            sound.set_volume(1)  # Adjust volume here
+
+    def play(self, key):
+        if key in self.move_channels:
+            self.move_channels[key].play(self.move_sounds[key])
+
+    def stop(self, key):
+        if key in self.move_channels:
+            self.move_channels[key].stop()
+
+    def stop_all(self):
+        for channel in self.move_channels.values():
+            channel.stop()
+
+
 def main():
     # Pygame setup
     pg.init()
-    bgm = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
-           "main-game contents/Audio/bgm3.mp3",
-           "main-game contents/Audio/bgm4.mp3"]
     bgm_play_track = random.choice(bgm)
     vehicle_choice = random.choice(VEHICLES)
     screen = pg.display.set_mode((1280, 720))
@@ -101,6 +152,10 @@ def main():
 
     speed_reduction_factor = 0.2  # Reduce speed by 50%
 
+    bgm_manager = BackgroundMusic(bgm)
+    movement_sounds = MovementSounds(MOVEMENT_SOUNDS)
+    bgm_manager.play_random()
+
     def draw_background():
         screen.blit(resized_background, (0, background_road_pos_y1))
         screen.blit(resized_background, (0, background_road_pos_y2))
@@ -117,7 +172,8 @@ def main():
         obstacles.append((obstacle_image, obstacle_rect))
 
     def spawn_mud_puddle():
-        mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)  # Random x position within specific range
+        mud_puddle_rect.midtop = (
+            random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)  # Random x position within specific range
 
     # This is where the game runs
     while running:
@@ -125,6 +181,24 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_w:
+                    movement_sounds.play("w")
+                elif event.key == pg.K_a:
+                    movement_sounds.play("a")
+                elif event.key == pg.K_s:
+                    movement_sounds.play("s")
+                elif event.key == pg.K_d:
+                    movement_sounds.play("d")
+            elif event.type == pg.KEYUP:
+                if event.key == pg.K_w:
+                    movement_sounds.stop("w")
+                elif event.key == pg.K_a:
+                    movement_sounds.stop("a")
+                elif event.key == pg.K_s:
+                    movement_sounds.stop("s")
+                elif event.key == pg.K_d:
+                    movement_sounds.stop("d")
 
         # Add the surfaces
         draw_background()
@@ -162,7 +236,8 @@ def main():
 
         mud_puddle_rect.y += 5  # Move the mud puddle
         if mud_puddle_rect.top > screen.get_height():
-            mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)  # Reset mud puddle position
+            mud_puddle_rect.midtop = (
+                random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)  # Reset mud puddle position
         player_slowed = mud_puddle_rect.colliderect(player.get_rect())  # Check for collision with mud puddle
 
         # Update positions for scrolling effect
@@ -203,11 +278,19 @@ def main():
             player.image = pg.image.load(vehicle_choice).convert_alpha()
             player.image = pg.transform.scale(player.image, (150, 150))  # Scale the image to 150x150 pixels
 
+        # Stop sounds when no movement
+        if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
+            movement_sounds.stop_all()
+
         # Flip the display to put your work on screen
         pg.display.flip()
 
         # Limit FPS to 60
         dt = clock.tick(60) / 1000
+
+    # Cleanup
+    movement_sounds.stop_all()
+    bgm_manager.stop()
     pg.quit()
 
 
