@@ -23,9 +23,10 @@ MOVEMENT_SOUNDS = {
     "d": "main-game contents/Audio/motorbike.mp3",
     "s": "main-game contents/Audio/motor stop.mp3"
 }
+
 bgm = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
-           "main-game contents/Audio/bgm3.mp3",
-           "main-game contents/Audio/bgm4.mp3"]
+       "main-game contents/Audio/bgm3.mp3",
+       "main-game contents/Audio/bgm4.mp3"]
 
 
 class Score:
@@ -58,9 +59,20 @@ class Player:
         self.image = pg.transform.scale(self.image, (150, 150))  # Scale the image to 100x100 pixels
         self.pos = pg.Vector2(start_pos)
         self.health = 3
+        self.max_health = 3
+        self.heart_image = pg.transform.scale(pg.image.load('main-game contents/Obstacles/heart.png'), (50, 50))  # Load and scale the heart image
 
     def draw(self, screen):
         screen.blit(self.image, self.pos)
+
+    def draw_health(self, screen, x=10, y=70):
+        for i in range(self.max_health):
+            if i < self.health:
+                screen.blit(self.heart_image, (x + i * 55, y))
+            else:
+                empty_heart_image = pg.Surface((50, 50), pg.SRCALPHA)  # Create an empty surface for the empty heart
+                pg.draw.rect(empty_heart_image, (255, 255, 255, 50), empty_heart_image.get_rect(), border_radius=5)  # Draw a transparent rectangle
+                screen.blit(empty_heart_image, (x + i * 55, y))
 
     def get_rect(self):
         return self.image.get_rect(topleft=self.pos)
@@ -167,9 +179,12 @@ def main():
         screen.blit(tree_props_1, (700, tree_props_pos_y2))
 
     def spawn_obstacle():
-        obstacle_image = random.choice(obstacle_images)
-        obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
-        obstacles.append((obstacle_image, obstacle_rect))
+        # Generate a random number between 0 and 1
+        spawn_chance = random.random()
+        if spawn_chance < 0.5:  # Adjust this threshold as needed
+            obstacle_image = random.choice(obstacle_images)
+            obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+            obstacles.append((obstacle_image, obstacle_rect))
 
     def spawn_mud_puddle():
         mud_puddle_rect.midtop = (
@@ -210,7 +225,7 @@ def main():
         score.update(current_time, increment=1, interval=500)
 
         # Spawn obstacles periodically
-        if (current_time - obstacle_spawn_time) >= 3000:
+        if (current_time - obstacle_spawn_time) >= 5000:
             spawn_obstacle()
             obstacle_spawn_time = current_time
 
@@ -230,7 +245,7 @@ def main():
                 obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
         # Spawn and move the mud puddle
-        if (current_time - mud_puddle_spawn_time) >= 5000:  # Spawn a mud puddle every 5 seconds
+        if (current_time - mud_puddle_spawn_time) >= 10000:
             spawn_mud_puddle()
             mud_puddle_spawn_time = current_time
 
@@ -281,6 +296,9 @@ def main():
         # Stop sounds when no movement
         if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
             movement_sounds.stop_all()
+
+        # Draw health hearts at the end to ensure they are on top
+        player.draw_health(screen)
 
         # Flip the display to put your work on screen
         pg.display.flip()
