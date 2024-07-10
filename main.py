@@ -8,7 +8,10 @@ VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Veh
             "main-game contents/Vehicles/supercar1.png", "main-game contents/Vehicles/supercar2.png",
             "main-game contents/Vehicles/supercar3.png", "main-game contents/Vehicles/supercar4.png",
             "main-game contents/Vehicles/SUV1.png", "main-game contents/Vehicles/SUV2.png",
-            "main-game contents/Vehicles/SUV3.png", "main-game contents/Vehicles/SUV4.png"]
+            "main-game contents/Vehicles/SUV3.png", "main-game contents/Vehicles/SUV4.png",
+            "main-game contents/Vehicles/motorbike1.png", "main-game contents/Vehicles/motorbike2.png",
+            "main-game contents/Vehicles/motorbike3.png", "main-game contents/Vehicles/motorbike4.png"
+            ]
 
 VEHICLE_SOUNDS = [
     "main-game contents/Audio/motorbike.mp3",
