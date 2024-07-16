@@ -1,6 +1,9 @@
 import pygame as pg
 import random
 
+PLAYER_SIZE_Y = 160
+PLAYER_SIZE_X = 80
+
 # Define constants
 OBSTACLES = ["main-game contents/Obstacles/Wood.png", "main-game contents/Obstacles/Axe.png",
              "main-game contents/Obstacles/Stone.png"]
@@ -13,6 +16,7 @@ VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Veh
             "main-game contents/Vehicles/motorbike1.png", "main-game contents/Vehicles/motorbike2.png",
             "main-game contents/Vehicles/motorbike3.png", "main-game contents/Vehicles/motorbike4.png"
             ]
+
 VEHICLE_SOUNDS = [
     "main-game contents/Audio/motorbike.mp3",
     "main-game contents/Audio/supercar.mp3",
@@ -27,6 +31,7 @@ MOVEMENT_SOUNDS = {
 }
 BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
        "main-game contents/Audio/bgm3.mp3", "main-game contents/Audio/bgm4.mp3"]
+
 
 # Define classes
 class Score:
@@ -53,7 +58,7 @@ class Score:
 class Player:
     def __init__(self, image_path, start_pos):
         self.image = pg.image.load(image_path).convert_alpha()
-        self.image = pg.transform.scale(self.image, (150, 150))
+        self.image = pg.transform.scale(self.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
         self.pos = pg.Vector2(start_pos)
         self.health = 3
         self.max_health = 3
@@ -116,6 +121,7 @@ class MovementSounds:
 
 
 def main():
+    # Initialize the game
     pg.init()
     screen = pg.display.set_mode((1280, 720))
     pg.display.set_caption('Top-Down Race')
@@ -168,6 +174,10 @@ def main():
     def spawn_mud_puddle():
         mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
+    def draw_border():
+        border = pg.Surface((353, 720), pg.SRCALPHA).convert()
+        screen.blit(border, (0,0))
+
     while running:
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -191,6 +201,7 @@ def main():
                 if event.key == pg.K_d:
                     movement_sounds.stop("d")
 
+        draw_border()
         draw_background()
         screen.blit(mud_puddle_image, mud_puddle_rect)
         player.draw(screen)
@@ -256,7 +267,7 @@ def main():
         if keys[pg.K_l]:
             vehicle_choice = random.choice(VEHICLES)
             player.image = pg.image.load(vehicle_choice).convert_alpha()
-            player.image = pg.transform.scale(player.image, (150, 150))
+            player.image = pg.transform.scale(player.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
 
         if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
             movement_sounds.stop_all()
@@ -274,5 +285,6 @@ def main():
     movement_sounds.stop_all()
     bgm_manager.stop()
     pg.quit()
+
 
 main()
