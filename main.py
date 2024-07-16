@@ -147,6 +147,10 @@ def main():
     mud_puddle_image = pg.transform.scale(mud_puddle_image, (100, 100))
     mud_puddle_rect = mud_puddle_image.get_rect(midtop=(screen.get_width() // 2, -50))
     mud_puddle_spawn_time = pg.time.get_ticks()
+    speed_platform_image = pg.image.load('main-game contents/Obstacles/arrow.png').convert_alpha()
+    speed_platform_image = pg.transform.scale(speed_platform_image, (50, 100))
+    speed_platform_rect = speed_platform_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+    speed_platform_spawn_time = pg.time.get_ticks()
     speed_reduction_factor = 0.2
     bgm_manager = BackgroundMusic(BGM)
     movement_sounds = MovementSounds(MOVEMENT_SOUNDS)
@@ -177,6 +181,9 @@ def main():
 
     def spawn_mud_puddle():
         mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+
+    def spawn_speed_platform():
+        speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
     def draw_border():
         border = pg.Surface((353, 720), pg.SRCALPHA).convert()
@@ -209,6 +216,7 @@ def main():
         draw_border()
         draw_background()
         screen.blit(mud_puddle_image, mud_puddle_rect)
+        screen.blit(speed_platform_image, speed_platform_rect)
         player.draw(screen)
         draw_trees()
         score.draw(screen)
@@ -235,10 +243,20 @@ def main():
             spawn_mud_puddle()
             mud_puddle_spawn_time = current_time
 
+        if (current_time - speed_platform_spawn_time) >= 12000:
+            spawn_speed_platform()
+            speed_platform_spawn_time = current_time
+
         mud_puddle_rect.y += scroll_speed
+        speed_platform_rect.y += scroll_speed
+
         if mud_puddle_rect.top > screen.get_height():
             mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+        if speed_platform_rect.top > screen.get_height():
+            speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+
         player_slowed = mud_puddle_rect.colliderect(player.get_rect())
+        player_speeded = speed_platform_rect.colliderect(player.get_rect())
 
         background_road_pos_y1 += scroll_speed
         background_road_pos_y2 += scroll_speed
@@ -258,6 +276,9 @@ def main():
 
         if player_slowed:
             speed_modifier = speed_reduction_factor
+        elif player_speeded:
+            speed_modifier = 2
+            player.pos.y -= 50  # Move the player up when colliding with the speed platform
         else:
             speed_modifier = 1
 
