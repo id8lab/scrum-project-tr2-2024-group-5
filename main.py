@@ -155,6 +155,10 @@ def main():
     speed_increase_interval = 15000  # Interval to increase speed (in milliseconds)
     last_speed_increase_time = pg.time.get_ticks()
 
+    # Define border rectangles
+    left_border = pg.Rect(0, 0, 353, 720)
+    right_border = pg.Rect(935, 0, 353, 720)
+
     def draw_background():
         screen.blit(resized_background, (0, background_road_pos_y1))
         screen.blit(resized_background, (0, background_road_pos_y2))
@@ -176,7 +180,8 @@ def main():
 
     def draw_border():
         border = pg.Surface((353, 720), pg.SRCALPHA).convert()
-        screen.blit(border, (0,0))
+        screen.blit(border, (0, 0))
+        screen.blit(border, (935, 0))
 
     while running:
         for event in pg.event.get():
@@ -271,6 +276,12 @@ def main():
 
         if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
             movement_sounds.stop_all()
+
+        player_rect = player.get_rect()
+        border_push_down_speed = 500  # Speed at which the player is pushed down
+
+        if player_rect.colliderect(left_border) or player_rect.colliderect(right_border):
+            player.pos.y += border_push_down_speed * dt
 
         player.draw_health(screen)
 
