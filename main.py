@@ -142,15 +142,17 @@ def main():
     pg.mixer.Sound(random.choice(BGM)).play(-1).set_volume(0.6)
     obstacle_images = [pg.transform.scale(pg.image.load(obstacle), (50, 50)) for obstacle in OBSTACLES]
     obstacles = []
-    obstacle_spawn_time = pg.time.get_ticks()
+    spawn_times = {
+        "obstacle": pg.time.get_ticks(),
+        "mud_puddle": pg.time.get_ticks(),
+        "speed_platform": pg.time.get_ticks()
+    }
     mud_puddle_image = pg.image.load('main-game contents/Obstacles/Mud.png').convert_alpha()
     mud_puddle_image = pg.transform.scale(mud_puddle_image, (100, 100))
     mud_puddle_rect = mud_puddle_image.get_rect(midtop=(screen.get_width() // 2, -50))
-    mud_puddle_spawn_time = pg.time.get_ticks()
     speed_platform_image = pg.image.load('main-game contents/Obstacles/arrow.png').convert_alpha()
     speed_platform_image = pg.transform.scale(speed_platform_image, (50, 100))
     speed_platform_rect = speed_platform_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
-    speed_platform_spawn_time = pg.time.get_ticks()
     speed_reduction_factor = 0.2
     bgm_manager = BackgroundMusic(BGM)
     movement_sounds = MovementSounds(MOVEMENT_SOUNDS)
@@ -173,17 +175,16 @@ def main():
         screen.blit(tree_props_1, (-500, tree_props_pos_y2))
         screen.blit(tree_props_1, (700, tree_props_pos_y2))
 
-    def spawn_obstacle():
-        if random.random() < 0.5:
-            obstacle_image = random.choice(obstacle_images)
-            obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
-            obstacles.append((obstacle_image, obstacle_rect))
-
-    def spawn_mud_puddle():
-        mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-
-    def spawn_speed_platform():
-        speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+    def spawn_entity(entity_type):
+        if entity_type == "obstacle":
+            if random.random() < 0.5:
+                obstacle_image = random.choice(obstacle_images)
+                obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+                obstacles.append((obstacle_image, obstacle_rect))
+        elif entity_type == "mud_puddle":
+            mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+        elif entity_type == "speed_platform":
+            speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
     def draw_border():
         border = pg.Surface((353, 720), pg.SRCALPHA).convert()
@@ -223,9 +224,16 @@ def main():
         current_time = pg.time.get_ticks()
         score.update(current_time, increment=1, interval=500)
 
-        if (current_time - obstacle_spawn_time) >= 5000:
-            spawn_obstacle()
-            obstacle_spawn_time = current_time
+        for entity_type, last_spawn_time in spawn_times.items():
+            if (current_time - last_spawn_time) >= 5000 and entity_type == "obstacle":
+                spawn_entity(entity_type)
+                spawn_times[entity_type] = current_time
+            elif (current_time - last_spawn_time) >= 10000 and entity_type == "mud_puddle":
+                spawn_entity(entity_type)
+                spawn_times[entity_type] = current_time
+            elif (current_time - last_spawn_time) >= 12000 and entity_type == "speed_platform":
+                spawn_entity(entity_type)
+                spawn_times[entity_type] = current_time
 
         for obstacle_image, obstacle_rect in obstacles:
             obstacle_rect.y += scroll_speed
@@ -238,14 +246,6 @@ def main():
                 if player.health <= 0:
                     running = False
                 obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-
-        if (current_time - mud_puddle_spawn_time) >= 10000:
-            spawn_mud_puddle()
-            mud_puddle_spawn_time = current_time
-
-        if (current_time - speed_platform_spawn_time) >= 12000:
-            spawn_speed_platform()
-            speed_platform_spawn_time = current_time
 
         mud_puddle_rect.y += scroll_speed
         speed_platform_rect.y += scroll_speed
