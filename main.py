@@ -5,7 +5,7 @@ PLAYER_SIZE_Y = 160
 PLAYER_SIZE_X = 80
 
 # Define constants
-OBSTACLES = ["main-game contents/Obstacles/Wood.png", "main-game contents/Obstacles/Axe.png",
+OBSTACLES = ["main-game contents/Obstacles/Wood.png", "main-game contents/Obstacles/crate.png",
              "main-game contents/Obstacles/Stone.png"]
 VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
             "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png",
