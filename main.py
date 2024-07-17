@@ -40,11 +40,13 @@ class Score:
         self.font = pg.font.SysFont(font_name, font_size)
         self.color = color
         self.last_update_time = pg.time.get_ticks()
+        self.paused = False  # Flag to track if the game is paused
 
     def update(self, current_time, increment=1, interval=1000):
-        if (current_time - self.last_update_time) >= interval:
-            self.score += increment
-            self.last_update_time = current_time
+        if not self.paused:  # Only update score if the game is not paused
+            if (current_time - self.last_update_time) >= interval:
+                self.score += increment
+                self.last_update_time = current_time
 
     def draw(self, screen, x=10, y=10):
         score_surface = self.font.render(f'Score: {self.score}', True, self.color)
@@ -53,6 +55,13 @@ class Score:
     def reset(self):
         self.score = 0
         self.last_update_time = pg.time.get_ticks()
+
+    def toggle_pause(self, paused):
+        self.paused = paused
+        if paused:
+            self.last_update_time = pg.time.get_ticks()  # Reset last update time when paused
+
+
 
 
 class Player:
@@ -127,6 +136,7 @@ def main():
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
     running = True
+    paused = False
     dt = 0
     road_background = pg.image.load('main-game contents/Backgrounds/Road_Background.jpg')
     resized_background = pg.transform.scale(road_background, (1290, 723))
@@ -165,6 +175,15 @@ def main():
     left_border = pg.Rect(0, 0, 353, 720)
     right_border = pg.Rect(935, 0, 353, 720)
 
+    pause_button_image = pg.image.load('main-game contents/Obstacles/pause.png').convert_alpha()
+    pause_button_image = pg.transform.scale(pause_button_image, (80, 80))
+    pause_button_rect = pause_button_image.get_rect(topright=(1260, 10))
+
+    # Load resume button image
+    resume_button_image = pg.image.load('main-game contents/Obstacles/resume.png').convert_alpha()
+    resume_button_image = pg.transform.scale(resume_button_image, (200, 200))
+    resume_button_rect = resume_button_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
+
     def draw_background():
         screen.blit(resized_background, (0, background_road_pos_y1))
         screen.blit(resized_background, (0, background_road_pos_y2))
@@ -193,6 +212,11 @@ def main():
 
     while running:
         for event in pg.event.get():
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    paused = not paused
+                    score.toggle_pause(paused)
+        for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
             elif event.type == pg.KEYDOWN:
@@ -204,6 +228,9 @@ def main():
                     movement_sounds.play("s")
                 elif event.key == pg.K_d:
                     movement_sounds.play("d")
+                elif event.key == pg.K_SPACE:
+                    paused = not paused
+                    score.toggle_pause(paused)  # Toggle pause for score
             elif event.type == pg.KEYUP:
                 if event.key == pg.K_w:
                     movement_sounds.stop("w")
@@ -213,6 +240,14 @@ def main():
                     movement_sounds.stop("s")
                 if event.key == pg.K_d:
                     movement_sounds.stop("d")
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = pg.mouse.get_pos()
+                if pause_button_rect.collidepoint(mouse_pos):
+                    paused = True
+                    score.toggle_pause(paused)  # Pause score on button click
+                if resume_button_rect.collidepoint(mouse_pos) and paused:
+                    paused = False
+                    score.toggle_pause(paused)  # Unpause score on resume button click
 
         draw_border()
         draw_background()
@@ -221,96 +256,107 @@ def main():
         player.draw(screen)
         draw_trees()
         score.draw(screen)
-        current_time = pg.time.get_ticks()
-        score.update(current_time, increment=1, interval=500)
 
-        for entity_type, last_spawn_time in spawn_times.items():
-            if (current_time - last_spawn_time) >= 5000 and entity_type == "obstacle":
-                spawn_entity(entity_type)
-                spawn_times[entity_type] = current_time
-            elif (current_time - last_spawn_time) >= 10000 and entity_type == "mud_puddle":
-                spawn_entity(entity_type)
-                spawn_times[entity_type] = current_time
-            elif (current_time - last_spawn_time) >= 12000 and entity_type == "speed_platform":
-                spawn_entity(entity_type)
-                spawn_times[entity_type] = current_time
+        if not paused:
+            current_time = pg.time.get_ticks()
+            score.update(current_time, increment=1, interval=500)
+            for entity_type, last_spawn_time in spawn_times.items():
+                if (current_time - last_spawn_time) >= 5000 and entity_type == "obstacle":
+                    spawn_entity(entity_type)
+                    spawn_times[entity_type] = current_time
+                elif (current_time - last_spawn_time) >= 10000 and entity_type == "mud_puddle":
+                    spawn_entity(entity_type)
+                    spawn_times[entity_type] = current_time
+                elif (current_time - last_spawn_time) >= 12000 and entity_type == "speed_platform":
+                    spawn_entity(entity_type)
+                    spawn_times[entity_type] = current_time
 
-        for obstacle_image, obstacle_rect in obstacles:
-            obstacle_rect.y += scroll_speed
-            if obstacle_rect.top > screen.get_height():
-                obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-            screen.blit(obstacle_image, obstacle_rect)
-            if obstacle_rect.colliderect(player.get_rect()):
-                player.reduce_health()
-                print(f"Collision detected! Health: {player.health}")
-                if player.health <= 0:
-                    running = False
-                obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+            for obstacle_image, obstacle_rect in obstacles:
+                obstacle_rect.y += scroll_speed
+                if obstacle_rect.top > screen.get_height():
+                    obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+                screen.blit(obstacle_image, obstacle_rect)
+                if obstacle_rect.colliderect(player.get_rect()):
+                    player.reduce_health()
+                    print(f"Collision detected! Health: {player.health}")
+                    if player.health <= 0:
+                        running = False
+                    obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
-        mud_puddle_rect.y += scroll_speed
-        speed_platform_rect.y += scroll_speed
+            mud_puddle_rect.y += scroll_speed
+            speed_platform_rect.y += scroll_speed
 
-        if mud_puddle_rect.top > screen.get_height():
-            mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-        if speed_platform_rect.top > screen.get_height():
-            speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+            if mud_puddle_rect.top > screen.get_height():
+                mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+            if speed_platform_rect.top > screen.get_height():
+                speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
-        player_slowed = mud_puddle_rect.colliderect(player.get_rect())
-        player_speeded = speed_platform_rect.colliderect(player.get_rect())
+            player_slowed = mud_puddle_rect.colliderect(player.get_rect())
+            player_speeded = speed_platform_rect.colliderect(player.get_rect())
 
-        background_road_pos_y1 += scroll_speed
-        background_road_pos_y2 += scroll_speed
-        tree_props_pos_y1 += scroll_speed
-        tree_props_pos_y2 += scroll_speed
+            background_road_pos_y1 += scroll_speed
+            background_road_pos_y2 += scroll_speed
+            tree_props_pos_y1 += scroll_speed
+            tree_props_pos_y2 += scroll_speed
 
-        if background_road_pos_y1 >= 723:
-            background_road_pos_y1 = -723
-        if background_road_pos_y2 >= 723:
-            background_road_pos_y2 = -723
-        if tree_props_pos_y1 >= 723:
-            tree_props_pos_y1 = -723
-        if tree_props_pos_y2 >= 723:
-            tree_props_pos_y2 = -723
+            if background_road_pos_y1 >= 723:
+                background_road_pos_y1 = -723
+            if background_road_pos_y2 >= 723:
+                background_road_pos_y2 = -723
+            if tree_props_pos_y1 >= 723:
+                tree_props_pos_y1 = -723
+            if tree_props_pos_y2 >= 723:
+                tree_props_pos_y2 = -723
 
-        keys = pg.key.get_pressed()
+            keys = pg.key.get_pressed()
 
-        if player_slowed:
-            speed_modifier = speed_reduction_factor
-        elif player_speeded:
-            speed_modifier = 2
-            player.pos.y -= 50  # Move the player up when colliding with the speed platform
+            if player_slowed:
+                speed_modifier = speed_reduction_factor
+            elif player_speeded:
+                speed_modifier = 2
+                player.pos.y -= 50  # Move the player up when colliding with the speed platform
+            else:
+                speed_modifier = 1
+
+            if keys[pg.K_w]:
+                player.pos.y -= 400 * dt * speed_modifier
+            if keys[pg.K_s]:
+                player.pos.y += 200 * dt * speed_modifier
+            if keys[pg.K_a]:
+                player.pos.x -= 300 * dt * speed_modifier
+            if keys[pg.K_d]:
+                player.pos.x += 300 * dt * speed_modifier
+            if keys[pg.K_l]:
+                vehicle_choice = random.choice(VEHICLES)
+                player.image = pg.image.load(vehicle_choice).convert_alpha()
+                player.image = pg.transform.scale(player.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
+
+            if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
+                movement_sounds.stop_all()
+
+            player_rect = player.get_rect()
+            border_push_down_speed = 500  # Speed at which the player is pushed down
+
+            if player_rect.colliderect(left_border) or player_rect.colliderect(right_border):
+                player.pos.y += border_push_down_speed * dt
+
+            player.draw_health(screen)
+
+            # Increase scroll speed over time
+            if (current_time - last_speed_increase_time) >= speed_increase_interval:
+                scroll_speed += 1
+                last_speed_increase_time = current_time
+
         else:
-            speed_modifier = 1
+            # Draw pause screen
+            pause_overlay = pg.Surface((screen.get_width(), screen.get_height()), pg.SRCALPHA)
+            pause_overlay.fill((0, 0, 0, 128))  # Semi-transparent overlay
+            screen.blit(pause_overlay, (0, 0))
+            screen.blit(resume_button_image, resume_button_rect)
 
-        if keys[pg.K_w]:
-            player.pos.y -= 400 * dt * speed_modifier
-        if keys[pg.K_s]:
-            player.pos.y += 200 * dt * speed_modifier
-        if keys[pg.K_a]:
-            player.pos.x -= 300 * dt * speed_modifier
-        if keys[pg.K_d]:
-            player.pos.x += 300 * dt * speed_modifier
-        if keys[pg.K_l]:
-            vehicle_choice = random.choice(VEHICLES)
-            player.image = pg.image.load(vehicle_choice).convert_alpha()
-            player.image = pg.transform.scale(player.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
-
-        if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
-            movement_sounds.stop_all()
-
-        player_rect = player.get_rect()
-        border_push_down_speed = 500  # Speed at which the player is pushed down
-
-        if player_rect.colliderect(left_border) or player_rect.colliderect(right_border):
-            player.pos.y += border_push_down_speed * dt
-
-        player.draw_health(screen)
-
-        # Increase scroll speed over time
-        if (current_time - last_speed_increase_time) >= speed_increase_interval:
-            scroll_speed += 1
-            last_speed_increase_time = current_time
-
+        # Draw pause button
+        screen.blit(pause_button_image, pause_button_rect)
+        score.draw(screen)
         pg.display.flip()
         dt = clock.tick(60) / 1000
 
@@ -319,4 +365,5 @@ def main():
     pg.quit()
 
 
-main()
+if __name__ == "__main__":
+    main()
