@@ -6,7 +6,8 @@ PLAYER_SIZE_X = 80
 
 # Define constants
 OBSTACLES = ["main-game contents/Obstacles/Wood.png", "main-game contents/Obstacles/crate.png",
-             "main-game contents/Obstacles/Stone.png"]
+             "main-game contents/Obstacles/Stone.png", "main-game contents/Obstacles/Mud.png",
+             "main-game contents/Obstacles/arrow.png"]
 VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
             "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png",
             "main-game contents/Vehicles/supercar1.png", "main-game contents/Vehicles/supercar2.png",
@@ -140,26 +141,24 @@ def main():
     obstacle_x_pos_2 = 900
     player = Player(random.choice(VEHICLES), (screen.get_width() / 2, screen.get_height() / 2))
     pg.mixer.Sound(random.choice(BGM)).play(-1).set_volume(0.6)
-    obstacle_images = [pg.transform.scale(pg.image.load(obstacle), (50, 50)) for obstacle in OBSTACLES]
+    obstacle_images = [pg.transform.scale(pg.image.load(obstacle), (50, 50)) for obstacle in OBSTACLES[:3]]
+    mud_puddle_image = pg.image.load(OBSTACLES[3]).convert_alpha()
+    mud_puddle_image = pg.transform.scale(mud_puddle_image, (100, 100))
+    speed_platform_image = pg.image.load(OBSTACLES[4]).convert_alpha()
+    speed_platform_image = pg.transform.scale(speed_platform_image, (50, 100))
     obstacles = []
     spawn_times = {
         "obstacle": pg.time.get_ticks(),
         "mud_puddle": pg.time.get_ticks(),
         "speed_platform": pg.time.get_ticks()
     }
-    mud_puddle_image = pg.image.load('main-game contents/Obstacles/Mud.png').convert_alpha()
-    mud_puddle_image = pg.transform.scale(mud_puddle_image, (100, 100))
-    mud_puddle_rect = mud_puddle_image.get_rect(midtop=(screen.get_width() // 2, -50))
-    speed_platform_image = pg.image.load('main-game contents/Obstacles/arrow.png').convert_alpha()
-    speed_platform_image = pg.transform.scale(speed_platform_image, (50, 100))
-    speed_platform_rect = speed_platform_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
-    speed_reduction_factor = 0.2
     bgm_manager = BackgroundMusic(BGM)
     movement_sounds = MovementSounds(MOVEMENT_SOUNDS)
     bgm_manager.play_random()
     scroll_speed = 10  # Initial scroll speed
     speed_increase_interval = 15000  # Interval to increase speed (in milliseconds)
     last_speed_increase_time = pg.time.get_ticks()
+    speed_reduction_factor = 0.2  # Speed reduction factor when hitting mud puddles
 
     # Define border rectangles
     left_border = pg.Rect(0, 0, 353, 720)
@@ -177,14 +176,15 @@ def main():
 
     def spawn_entity(entity_type):
         if entity_type == "obstacle":
-            if random.random() < 0.5:
-                obstacle_image = random.choice(obstacle_images)
-                obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
-                obstacles.append((obstacle_image, obstacle_rect))
+            obstacle_image = random.choice(obstacle_images)
+            obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+            obstacles.append((obstacle_image, obstacle_rect))
         elif entity_type == "mud_puddle":
-            mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+            mud_puddle_rect = mud_puddle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+            obstacles.append((mud_puddle_image, mud_puddle_rect))
         elif entity_type == "speed_platform":
-            speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+            speed_platform_rect = speed_platform_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+            obstacles.append((speed_platform_image, speed_platform_rect))
 
     def draw_border():
         border = pg.Surface((353, 720), pg.SRCALPHA).convert()
@@ -216,8 +216,6 @@ def main():
 
         draw_border()
         draw_background()
-        screen.blit(mud_puddle_image, mud_puddle_rect)
-        screen.blit(speed_platform_image, speed_platform_rect)
         player.draw(screen)
         draw_trees()
         score.draw(screen)
@@ -241,22 +239,19 @@ def main():
                 obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
             screen.blit(obstacle_image, obstacle_rect)
             if obstacle_rect.colliderect(player.get_rect()):
-                player.reduce_health()
-                print(f"Collision detected! Health: {player.health}")
-                if player.health <= 0:
-                    running = False
+                if obstacle_image == mud_puddle_image:
+                    player_slowed = True
+                elif obstacle_image == speed_platform_image:
+                    player_speeded = True
+                else:
+                    player.reduce_health()
+                    print(f"Collision detected! Health: {player.health}")
+                    if player.health <= 0:
+                        running = False
                 obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
-        mud_puddle_rect.y += scroll_speed
-        speed_platform_rect.y += scroll_speed
-
-        if mud_puddle_rect.top > screen.get_height():
-            mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-        if speed_platform_rect.top > screen.get_height():
-            speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-
-        player_slowed = mud_puddle_rect.colliderect(player.get_rect())
-        player_speeded = speed_platform_rect.colliderect(player.get_rect())
+        player_slowed = False
+        player_speeded = False
 
         background_road_pos_y1 += scroll_speed
         background_road_pos_y2 += scroll_speed
