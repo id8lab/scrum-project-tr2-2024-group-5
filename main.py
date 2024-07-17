@@ -1,3 +1,4 @@
+
 import pygame as pg
 import random
 
@@ -119,6 +120,60 @@ class MovementSounds:
         for channel in self.move_channels.values():
             channel.stop()
 
+
+def display_race_result(screen, score):
+    screen.fill((0, 0, 0))
+
+    # Create a larger font for the result and score
+    large_font = pg.font.SysFont('Arial', 50)
+    normal_font = pg.font.SysFont('Arial', 30)
+
+    result_text = large_font.render('Race Over!', True, (255, 0, 0))
+    score_text = large_font.render(f'Score: {score}', True, (255, 255, 255))
+
+    # Load background image
+    background_image = pg.image.load('main-game contents/Backgrounds/result.png')
+    background_rect = background_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
+    screen.blit(background_image, background_rect)
+
+    # Button dimensions and positions
+    button_width = 200
+    button_height = 60
+    restart_button = pg.Rect(screen.get_width() // 2 - button_width // 2, screen.get_height() // 2 + 50, button_width, button_height)
+    quit_button = pg.Rect(screen.get_width() // 2 - button_width // 2, screen.get_height() // 2 + 120, button_width, button_height)
+
+    # Button colors
+    restart_color = (0, 200, 0)  # Green
+    quit_color = (200, 0, 0)      # Red
+
+    # Draw buttons
+    pg.draw.rect(screen, restart_color, restart_button)
+    pg.draw.rect(screen, quit_color, quit_button)
+
+    # Position texts at the top
+    screen.blit(result_text, (screen.get_width() // 2 - result_text.get_width() // 2, 20))
+    screen.blit(score_text, (screen.get_width() // 2 - score_text.get_width() // 2, 80))
+
+    while True:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if restart_button.collidepoint(mouse_pos):
+                    main()  # Restart game
+                elif quit_button.collidepoint(mouse_pos):
+                    pg.quit()
+                    return
+
+        # Render button text
+        restart_text = normal_font.render('One More Time', True, (255, 255, 255))
+        quit_text = normal_font.render('Exit', True, (255, 255, 255))
+        screen.blit(restart_text, (restart_button.x + (button_width - restart_text.get_width()) // 2, restart_button.y + (button_height - restart_text.get_height()) // 2))
+        screen.blit(quit_text, (quit_button.x + (button_width - quit_text.get_width()) // 2, quit_button.y + (button_height - quit_text.get_height()) // 2))
+
+        pg.display.flip()
 
 def main():
     # Initialize the game
@@ -316,7 +371,7 @@ def main():
 
     movement_sounds.stop_all()
     bgm_manager.stop()
+    display_race_result(screen, score.score)
     pg.quit()
-
 
 main()
