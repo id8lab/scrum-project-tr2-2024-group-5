@@ -1,4 +1,3 @@
-
 import pygame as pg
 import random
 
@@ -139,12 +138,14 @@ def display_race_result(screen, score):
     # Button dimensions and positions
     button_width = 200
     button_height = 60
-    restart_button = pg.Rect(screen.get_width() // 2 - button_width // 2, screen.get_height() // 2 + 50, button_width, button_height)
-    quit_button = pg.Rect(screen.get_width() // 2 - button_width // 2, screen.get_height() // 2 + 120, button_width, button_height)
+    restart_button = pg.Rect(screen.get_width() // 2 - button_width // 2, screen.get_height() // 2 + 50, button_width,
+                             button_height)
+    quit_button = pg.Rect(screen.get_width() // 2 - button_width // 2, screen.get_height() // 2 + 120, button_width,
+                          button_height)
 
     # Button colors
     restart_color = (0, 200, 0)  # Green
-    quit_color = (200, 0, 0)      # Red
+    quit_color = (200, 0, 0)  # Red
 
     # Draw buttons
     pg.draw.rect(screen, restart_color, restart_button)
@@ -170,10 +171,13 @@ def display_race_result(screen, score):
         # Render button text
         restart_text = normal_font.render('One More Time', True, (255, 255, 255))
         quit_text = normal_font.render('Exit', True, (255, 255, 255))
-        screen.blit(restart_text, (restart_button.x + (button_width - restart_text.get_width()) // 2, restart_button.y + (button_height - restart_text.get_height()) // 2))
-        screen.blit(quit_text, (quit_button.x + (button_width - quit_text.get_width()) // 2, quit_button.y + (button_height - quit_text.get_height()) // 2))
+        screen.blit(restart_text, (restart_button.x + (button_width - restart_text.get_width()) // 2,
+                                   restart_button.y + (button_height - restart_text.get_height()) // 2))
+        screen.blit(quit_text, (quit_button.x + (button_width - quit_text.get_width()) // 2,
+                                quit_button.y + (button_height - quit_text.get_height()) // 2))
 
         pg.display.flip()
+
 
 def main():
     # Initialize the game
@@ -207,7 +211,8 @@ def main():
     mud_puddle_rect = mud_puddle_image.get_rect(midtop=(screen.get_width() // 2, -50))
     speed_platform_image = pg.image.load('main-game contents/Obstacles/arrow.png').convert_alpha()
     speed_platform_image = pg.transform.scale(speed_platform_image, (50, 100))
-    speed_platform_rect = speed_platform_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+    speed_platform_rect = speed_platform_image.get_rect(
+        midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
     speed_reduction_factor = 0.2
     bgm_manager = BackgroundMusic(BGM)
     movement_sounds = MovementSounds(MOVEMENT_SOUNDS)
@@ -234,7 +239,8 @@ def main():
         if entity_type == "obstacle":
             if random.random() < 0.5:
                 obstacle_image = random.choice(obstacle_images)
-                obstacle_rect = obstacle_image.get_rect(midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+                obstacle_rect = obstacle_image.get_rect(
+                    midtop=(random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
                 obstacles.append((obstacle_image, obstacle_rect))
         elif entity_type == "mud_puddle":
             mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
@@ -373,5 +379,6 @@ def main():
     bgm_manager.stop()
     display_race_result(screen, score.score)
     pg.quit()
+
 
 main()
