@@ -169,8 +169,8 @@ def display_race_result(screen, score):
                     return
 
         # Render button text
-        restart_text = normal_font.render('One More Time', True, (255, 255, 255))
-        quit_text = normal_font.render('Exit', True, (255, 255, 255))
+        restart_text = normal_font.render('Try Again', True, (255, 255, 255))
+        quit_text = normal_font.render('Quit', True, (255, 255, 255))
         screen.blit(restart_text, (restart_button.x + (button_width - restart_text.get_width()) // 2,
                                    restart_button.y + (button_height - restart_text.get_height()) // 2))
         screen.blit(quit_text, (quit_button.x + (button_width - quit_text.get_width()) // 2,
@@ -187,6 +187,7 @@ def main():
     clock = pg.time.Clock()
     running = True
     dt = 0
+    paused = False
     road_background = pg.image.load('main-game contents/Backgrounds/Road_Background.jpg')
     resized_background = pg.transform.scale(road_background, (1290, 723))
     score = Score()
@@ -257,15 +258,18 @@ def main():
             if event.type == pg.QUIT:
                 running = False
             elif event.type == pg.KEYDOWN:
-                if event.key == pg.K_w:
-                    movement_sounds.play("w")
-                elif event.key == pg.K_a:
-                    movement_sounds.play("a")
-                elif event.key == pg.K_s:
-                    movement_sounds.play("s")
-                elif event.key == pg.K_d:
-                    movement_sounds.play("d")
-            elif event.type == pg.KEYUP:
+                if event.key == pg.K_ESCAPE:
+                    paused = not paused
+                if not paused:
+                    if event.key == pg.K_w:
+                        movement_sounds.play("w")
+                    elif event.key == pg.K_a:
+                        movement_sounds.play("a")
+                    elif event.key == pg.K_s:
+                        movement_sounds.play("s")
+                    elif event.key == pg.K_d:
+                        movement_sounds.play("d")
+            elif event.type == pg.KEYUP and not paused:
                 if event.key == pg.K_w:
                     movement_sounds.stop("w")
                 if event.key == pg.K_a:
@@ -275,105 +279,115 @@ def main():
                 if event.key == pg.K_d:
                     movement_sounds.stop("d")
 
-        draw_border()
-        draw_background()
-        screen.blit(mud_puddle_image, mud_puddle_rect)
-        screen.blit(speed_platform_image, speed_platform_rect)
-        player.draw(screen)
-        draw_trees()
-        score.draw(screen)
-        current_time = pg.time.get_ticks()
-        score.update(current_time, increment=1, interval=500)
+        if not paused:
+            draw_border()
+            draw_background()
+            screen.blit(mud_puddle_image, mud_puddle_rect)
+            screen.blit(speed_platform_image, speed_platform_rect)
+            player.draw(screen)
+            draw_trees()
+            score.draw(screen)
+            current_time = pg.time.get_ticks()
+            score.update(current_time, increment=1, interval=500)
 
-        for entity_type, last_spawn_time in spawn_times.items():
-            if (current_time - last_spawn_time) >= 5000 and entity_type == "obstacle":
-                spawn_entity(entity_type)
-                spawn_times[entity_type] = current_time
-            elif (current_time - last_spawn_time) >= 10000 and entity_type == "mud_puddle":
-                spawn_entity(entity_type)
-                spawn_times[entity_type] = current_time
-            elif (current_time - last_spawn_time) >= 12000 and entity_type == "speed_platform":
-                spawn_entity(entity_type)
-                spawn_times[entity_type] = current_time
+            for entity_type, last_spawn_time in spawn_times.items():
+                if (current_time - last_spawn_time) >= 5000 and entity_type == "obstacle":
+                    spawn_entity(entity_type)
+                    spawn_times[entity_type] = current_time
+                elif (current_time - last_spawn_time) >= 10000 and entity_type == "mud_puddle":
+                    spawn_entity(entity_type)
+                    spawn_times[entity_type] = current_time
+                elif (current_time - last_spawn_time) >= 12000 and entity_type == "speed_platform":
+                    spawn_entity(entity_type)
+                    spawn_times[entity_type] = current_time
 
-        for obstacle_image, obstacle_rect in obstacles:
-            obstacle_rect.y += scroll_speed
-            if obstacle_rect.top > screen.get_height():
-                obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-            screen.blit(obstacle_image, obstacle_rect)
-            if obstacle_rect.colliderect(player.get_rect()):
-                player.reduce_health()
-                print(f"Collision detected! Health: {player.health}")
-                if player.health <= 0:
-                    running = False
-                obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+            for obstacle_image, obstacle_rect in obstacles:
+                obstacle_rect.y += scroll_speed
+                if obstacle_rect.top > screen.get_height():
+                    obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+                screen.blit(obstacle_image, obstacle_rect)
+                if obstacle_rect.colliderect(player.get_rect()):
+                    player.reduce_health()
+                    print(f"Collision detected! Health: {player.health}")
+                    if player.health <= 0:
+                        running = False
+                    obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
-        mud_puddle_rect.y += scroll_speed
-        speed_platform_rect.y += scroll_speed
+            mud_puddle_rect.y += scroll_speed
+            speed_platform_rect.y += scroll_speed
 
-        if mud_puddle_rect.top > screen.get_height():
-            mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-        if speed_platform_rect.top > screen.get_height():
-            speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+            if mud_puddle_rect.top > screen.get_height():
+                mud_puddle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+            if speed_platform_rect.top > screen.get_height():
+                speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
-        player_slowed = mud_puddle_rect.colliderect(player.get_rect())
-        player_speeded = speed_platform_rect.colliderect(player.get_rect())
+            player_slowed = mud_puddle_rect.colliderect(player.get_rect())
+            player_speeded = speed_platform_rect.colliderect(player.get_rect())
 
-        background_road_pos_y1 += scroll_speed
-        background_road_pos_y2 += scroll_speed
-        tree_props_pos_y1 += scroll_speed
-        tree_props_pos_y2 += scroll_speed
+            background_road_pos_y1 += scroll_speed
+            background_road_pos_y2 += scroll_speed
+            tree_props_pos_y1 += scroll_speed
+            tree_props_pos_y2 += scroll_speed
 
-        if background_road_pos_y1 >= 723:
-            background_road_pos_y1 = -723
-        if background_road_pos_y2 >= 723:
-            background_road_pos_y2 = -723
-        if tree_props_pos_y1 >= 723:
-            tree_props_pos_y1 = -723
-        if tree_props_pos_y2 >= 723:
-            tree_props_pos_y2 = -723
+            if background_road_pos_y1 >= 723:
+                background_road_pos_y1 = -723
+            if background_road_pos_y2 >= 723:
+                background_road_pos_y2 = -723
+            if tree_props_pos_y1 >= 723:
+                tree_props_pos_y1 = -723
+            if tree_props_pos_y2 >= 723:
+                tree_props_pos_y2 = -723
 
-        keys = pg.key.get_pressed()
+            keys = pg.key.get_pressed()
 
-        if player_slowed:
-            speed_modifier = speed_reduction_factor
-        elif player_speeded:
-            speed_modifier = 2
-            player.pos.y -= 50  # Move the player up when colliding with the speed platform
+            if player_slowed:
+                speed_modifier = speed_reduction_factor
+            elif player_speeded:
+                speed_modifier = 2
+                player.pos.y -= 50  # Move the player up when colliding with the speed platform
+            else:
+                speed_modifier = 1
+
+            if keys[pg.K_w]:
+                player.pos.y -= 400 * dt * speed_modifier
+            if keys[pg.K_s]:
+                player.pos.y += 200 * dt * speed_modifier
+            if keys[pg.K_a]:
+                player.pos.x -= 300 * dt * speed_modifier
+            if keys[pg.K_d]:
+                player.pos.x += 300 * dt * speed_modifier
+            if keys[pg.K_l]:
+                vehicle_choice = random.choice(VEHICLES)
+                player.image = pg.image.load(vehicle_choice).convert_alpha()
+                player.image = pg.transform.scale(player.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
+
+            if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
+                movement_sounds.stop_all()
+
+            player_rect = player.get_rect()
+            border_push_down_speed = 500  # Speed at which the player is pushed down
+
+            if player_rect.colliderect(left_border) or player_rect.colliderect(right_border):
+                player.pos.y += border_push_down_speed * dt
+
+            player.draw_health(screen)
+
+            # Increase scroll speed over time
+            if (current_time - last_speed_increase_time) >= speed_increase_interval:
+                scroll_speed += 1
+                last_speed_increase_time = current_time
+
+            pg.display.flip()
+            dt = clock.tick(60) / 1000
+
         else:
-            speed_modifier = 1
-
-        if keys[pg.K_w]:
-            player.pos.y -= 400 * dt * speed_modifier
-        if keys[pg.K_s]:
-            player.pos.y += 200 * dt * speed_modifier
-        if keys[pg.K_a]:
-            player.pos.x -= 300 * dt * speed_modifier
-        if keys[pg.K_d]:
-            player.pos.x += 300 * dt * speed_modifier
-        if keys[pg.K_l]:
-            vehicle_choice = random.choice(VEHICLES)
-            player.image = pg.image.load(vehicle_choice).convert_alpha()
-            player.image = pg.transform.scale(player.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
-
-        if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
-            movement_sounds.stop_all()
-
-        player_rect = player.get_rect()
-        border_push_down_speed = 500  # Speed at which the player is pushed down
-
-        if player_rect.colliderect(left_border) or player_rect.colliderect(right_border):
-            player.pos.y += border_push_down_speed * dt
-
-        player.draw_health(screen)
-
-        # Increase scroll speed over time
-        if (current_time - last_speed_increase_time) >= speed_increase_interval:
-            scroll_speed += 1
-            last_speed_increase_time = current_time
-
-        pg.display.flip()
-        dt = clock.tick(60) / 1000
+            # Display "Paused" message when the game is paused
+            font = pg.font.Font(None, 74)
+            text = font.render("Paused", True, (255, 0, 0))
+            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+            screen.blit(text, text_rect)
+            pg.display.flip()
+            dt = clock.tick(60) / 1000
 
     movement_sounds.stop_all()
     bgm_manager.stop()
