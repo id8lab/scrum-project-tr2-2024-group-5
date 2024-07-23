@@ -1,6 +1,8 @@
 import pygame as pg
 import random
 
+WHITE_COLOR = (255, 255, 255)
+
 PLAYER_SIZE_Y = 160
 PLAYER_SIZE_X = 80
 
@@ -128,7 +130,7 @@ def display_race_result(screen, score):
     normal_font = pg.font.SysFont('Arial', 30)
 
     result_text = large_font.render('Race Over!', True, (255, 0, 0))
-    score_text = large_font.render(f'Score: {score}', True, (255, 255, 255))
+    score_text = large_font.render(f'Score: {score}', True, WHITE_COLOR)
 
     # Load background image
     background_image = pg.image.load('main-game contents/Backgrounds/result.png')
@@ -169,8 +171,8 @@ def display_race_result(screen, score):
                     return
 
         # Render button text
-        restart_text = normal_font.render('Try Again', True, (255, 255, 255))
-        quit_text = normal_font.render('Quit', True, (255, 255, 255))
+        restart_text = normal_font.render('Try Again', True, WHITE_COLOR)
+        quit_text = normal_font.render('Quit', True, WHITE_COLOR)
         screen.blit(restart_text, (restart_button.x + (button_width - restart_text.get_width()) // 2,
                                    restart_button.y + (button_height - restart_text.get_height()) // 2))
         screen.blit(quit_text, (quit_button.x + (button_width - quit_text.get_width()) // 2,
@@ -252,6 +254,19 @@ def main():
         border = pg.Surface((353, 720), pg.SRCALPHA).convert()
         screen.blit(border, (0, 0))
         screen.blit(border, (935, 0))
+
+    def pause_screen():
+        # Create a semi-transparent surface for darkening effect
+        dark_overlay = pg.Surface(screen.get_size())
+        dark_overlay.set_alpha(18)
+        # Display "Paused" message when the game is paused
+        screen.blit(dark_overlay, (0, 0))
+        font = pg.font.Font(None, 74)
+        text = font.render("Paused", True, WHITE_COLOR)
+        text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+        screen.blit(text, text_rect)
+        pg.display.flip()
+        dt = clock.tick(60) / 1000
 
     while running:
         for event in pg.event.get():
@@ -381,13 +396,7 @@ def main():
             dt = clock.tick(60) / 1000
 
         else:
-            # Display "Paused" message when the game is paused
-            font = pg.font.Font(None, 74)
-            text = font.render("Paused", True, (255, 0, 0))
-            text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
-            screen.blit(text, text_rect)
-            pg.display.flip()
-            dt = clock.tick(60) / 1000
+            pause_screen()
 
     movement_sounds.stop_all()
     bgm_manager.stop()
