@@ -1,10 +1,14 @@
 import pygame as pg
 import random
 
+ICON_SIZE = (100, 100)
+
 WHITE_COLOR = (255, 255, 255)
 
 PLAYER_SIZE_Y = 160
 PLAYER_SIZE_X = 80
+INGAME_BUTTON_WIDTH = 200
+INGAME_BUTTON_HEIGHT = 60
 
 # Define constants
 OBSTACLES = ["main-game contents/Obstacles/Wood.png", "main-game contents/Obstacles/crate.png",
@@ -64,7 +68,7 @@ class Player:
         self.pos = pg.Vector2(start_pos)
         self.health = 3
         self.max_health = 3
-        self.heart_image = pg.transform.scale(pg.image.load('main-game contents/Obstacles/heart.png'), (50, 50))
+        self.heart_image = pg.transform.scale(pg.image.load('main-game contents/Icons/heart.png'), (50, 50))
 
     def draw(self, screen):
         screen.blit(self.image, self.pos)
@@ -133,17 +137,15 @@ def display_race_result(screen, score):
     score_text = large_font.render(f'Score: {score}', True, WHITE_COLOR)
 
     # Load background image
-    background_image = pg.image.load('main-game contents/Backgrounds/result.png')
+    background_image = pg.image.load('main-game contents/Icons/result.png')
     background_rect = background_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
     screen.blit(background_image, background_rect)
 
     # Button dimensions and positions
-    button_width = 200
-    button_height = 60
-    restart_button = pg.Rect(screen.get_width() // 2 - button_width // 2, screen.get_height() // 2 + 50, button_width,
-                             button_height)
-    quit_button = pg.Rect(screen.get_width() // 2 - button_width // 2, screen.get_height() // 2 + 120, button_width,
-                          button_height)
+    restart_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 50,
+                             INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+    quit_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
+                          INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
 
     # Button colors
     restart_color = (0, 200, 0)  # Green
@@ -173,10 +175,10 @@ def display_race_result(screen, score):
         # Render button text
         restart_text = normal_font.render('Try Again', True, WHITE_COLOR)
         quit_text = normal_font.render('Quit', True, WHITE_COLOR)
-        screen.blit(restart_text, (restart_button.x + (button_width - restart_text.get_width()) // 2,
-                                   restart_button.y + (button_height - restart_text.get_height()) // 2))
-        screen.blit(quit_text, (quit_button.x + (button_width - quit_text.get_width()) // 2,
-                                quit_button.y + (button_height - quit_text.get_height()) // 2))
+        screen.blit(restart_text, (restart_button.x + (INGAME_BUTTON_WIDTH - restart_text.get_width()) // 2,
+                                   restart_button.y + (INGAME_BUTTON_HEIGHT - restart_text.get_height()) // 2))
+        screen.blit(quit_text, (quit_button.x + (INGAME_BUTTON_WIDTH - quit_text.get_width()) // 2,
+                                quit_button.y + (INGAME_BUTTON_HEIGHT - quit_text.get_height()) // 2))
 
         pg.display.flip()
 
@@ -223,10 +225,35 @@ def main():
     scroll_speed = 10  # Initial scroll speed
     speed_increase_interval = 15000  # Interval to increase speed (in milliseconds)
     last_speed_increase_time = pg.time.get_ticks()
-
     # Define border rectangles
     left_border = pg.Rect(0, 0, 353, 720)
     right_border = pg.Rect(935, 0, 353, 720)
+
+    def draw_pause_icon():
+        pause_icon = pg.image.load('main-game contents/Icons/Paused.png').convert_alpha()
+        pause_icon_resized = pg.transform.scale(pause_icon, ICON_SIZE)
+        icon_x = screen.get_width() - 120
+        icon_y = 20
+        play_icon_rect = pause_icon_resized.get_rect(topleft=(icon_x, icon_y))
+        font = pg.font.Font(None, 24)
+        esc_text = font.render('ESC', True, WHITE_COLOR)
+        text_margin = 10
+        esc_text_rect = esc_text.get_rect(midtop=(play_icon_rect.centerx, play_icon_rect.bottom + text_margin))
+        screen.blit(pause_icon_resized, play_icon_rect)
+        screen.blit(esc_text, esc_text_rect)
+
+    def draw_play_icon():
+        play_icon = pg.image.load('main-game contents/Icons/Play.png').convert_alpha()
+        play_icon_resized = pg.transform.scale(play_icon, ICON_SIZE)
+        icon_x = screen.get_width() - 120
+        icon_y = 20
+        play_icon_rect = play_icon_resized.get_rect(topleft=(icon_x, icon_y))
+        font = pg.font.Font(None, 24)
+        esc_text = font.render('ESC', True, WHITE_COLOR)
+        text_margin = 10
+        esc_text_rect = esc_text.get_rect(midtop=(play_icon_rect.centerx, play_icon_rect.bottom + text_margin))
+        screen.blit(play_icon_resized, play_icon_rect)
+        screen.blit(esc_text, esc_text_rect)
 
     def draw_background():
         screen.blit(resized_background, (0, background_road_pos_y1))
@@ -260,10 +287,11 @@ def main():
         dark_overlay = pg.Surface(screen.get_size())
         dark_overlay.set_alpha(18)
         # Display "Paused" message when the game is paused
+        draw_play_icon()
         screen.blit(dark_overlay, (0, 0))
         font = pg.font.Font(None, 74)
         text = font.render("Paused", True, WHITE_COLOR)
-        text_rect = text.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+        text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
         screen.blit(text, text_rect)
         pg.display.flip()
         dt = clock.tick(60) / 1000
@@ -304,6 +332,7 @@ def main():
             score.draw(screen)
             current_time = pg.time.get_ticks()
             score.update(current_time, increment=1, interval=500)
+            draw_pause_icon()
 
             for entity_type, last_spawn_time in spawn_times.items():
                 if (current_time - last_spawn_time) >= 5000 and entity_type == "obstacle":
