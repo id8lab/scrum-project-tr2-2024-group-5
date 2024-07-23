@@ -2,9 +2,8 @@ import pygame as pg
 import random
 
 ICON_SIZE = (100, 100)
-
+RED_COLOR = (200, 0, 0)  # Red
 WHITE_COLOR = (255, 255, 255)
-
 PLAYER_SIZE_Y = 160
 PLAYER_SIZE_X = 80
 INGAME_BUTTON_WIDTH = 200
@@ -149,11 +148,10 @@ def display_race_result(screen, score):
 
     # Button colors
     restart_color = (0, 200, 0)  # Green
-    quit_color = (200, 0, 0)  # Red
 
     # Draw buttons
     pg.draw.rect(screen, restart_color, restart_button)
-    pg.draw.rect(screen, quit_color, quit_button)
+    pg.draw.rect(screen, RED_COLOR, quit_button)
 
     # Position texts at the top
     screen.blit(result_text, (screen.get_width() // 2 - result_text.get_width() // 2, 20))
@@ -234,25 +232,12 @@ def main():
         pause_icon_resized = pg.transform.scale(pause_icon, ICON_SIZE)
         icon_x = screen.get_width() - 120
         icon_y = 20
-        play_icon_rect = pause_icon_resized.get_rect(topleft=(icon_x, icon_y))
+        pause_icon_rect = pause_icon_resized.get_rect(topleft=(icon_x, icon_y))
         font = pg.font.Font(None, 24)
         esc_text = font.render('ESC', True, WHITE_COLOR)
         text_margin = 10
-        esc_text_rect = esc_text.get_rect(midtop=(play_icon_rect.centerx, play_icon_rect.bottom + text_margin))
-        screen.blit(pause_icon_resized, play_icon_rect)
-        screen.blit(esc_text, esc_text_rect)
-
-    def draw_play_icon():
-        play_icon = pg.image.load('main-game contents/Icons/Play.png').convert_alpha()
-        play_icon_resized = pg.transform.scale(play_icon, ICON_SIZE)
-        icon_x = screen.get_width() - 120
-        icon_y = 20
-        play_icon_rect = play_icon_resized.get_rect(topleft=(icon_x, icon_y))
-        font = pg.font.Font(None, 24)
-        esc_text = font.render('ESC', True, WHITE_COLOR)
-        text_margin = 10
-        esc_text_rect = esc_text.get_rect(midtop=(play_icon_rect.centerx, play_icon_rect.bottom + text_margin))
-        screen.blit(play_icon_resized, play_icon_rect)
+        esc_text_rect = esc_text.get_rect(midtop=(pause_icon_rect.centerx, pause_icon_rect.bottom + text_margin))
+        screen.blit(pause_icon_resized, pause_icon_rect)
         screen.blit(esc_text, esc_text_rect)
 
     def draw_background():
@@ -285,16 +270,42 @@ def main():
     def pause_screen():
         # Create a semi-transparent surface for darkening effect
         dark_overlay = pg.Surface(screen.get_size())
-        dark_overlay.set_alpha(18)
+        dark_overlay.set_alpha(180)  # Adjust alpha value for better visibility of overlay
+
         # Display "Paused" message when the game is paused
-        draw_play_icon()
+        draw_pause_icon()
         screen.blit(dark_overlay, (0, 0))
         font = pg.font.Font(None, 74)
         text = font.render("Paused", True, WHITE_COLOR)
         text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
         screen.blit(text, text_rect)
+
+        # Button dimensions and positions
+        end_race_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
+                                  INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+        end_race_color = RED_COLOR
+        pg.draw.rect(screen, end_race_color, end_race_button)
+
+        # Render button text
+        normal_font = pg.font.Font(None, 30)
+        end_race_text = normal_font.render('End Race', True, WHITE_COLOR)
+        screen.blit(end_race_text, (end_race_button.x + (INGAME_BUTTON_WIDTH - end_race_text.get_width()) // 2,
+                                    end_race_button.y + (INGAME_BUTTON_HEIGHT - end_race_text.get_height()) // 2))
+
+        font = pg.font.SysFont('Arial', 50)
+        score_text = font.render(f'Current Score: {score.score}', True, WHITE_COLOR)
+        screen.blit(score_text, (screen.get_width() // 2 - score_text.get_width() // 2, 200))
+
+        for event in pg.event.get():
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if end_race_button.collidepoint(mouse_pos):
+                    movement_sounds.stop_all()
+                    bgm_manager.stop()
+                    display_race_result(screen, score.score)
+                    return
+
         pg.display.flip()
-        dt = clock.tick(60) / 1000
 
     while running:
         for event in pg.event.get():
@@ -322,7 +333,9 @@ def main():
                 if event.key == pg.K_d:
                     movement_sounds.stop("d")
 
-        if not paused:
+        if paused:
+            pause_screen()
+        else:
             draw_border()
             draw_background()
             screen.blit(mud_puddle_image, mud_puddle_rect)
@@ -423,9 +436,6 @@ def main():
 
             pg.display.flip()
             dt = clock.tick(60) / 1000
-
-        else:
-            pause_screen()
 
     movement_sounds.stop_all()
     bgm_manager.stop()
