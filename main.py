@@ -1,6 +1,10 @@
 import pygame as pg
 import random
 
+SCREEN_HEIGHT = 720
+
+SCREEN_WIDTH = 1280
+
 ICON_SIZE = (100, 100)
 RED_COLOR = (200, 0, 0)  # Red
 WHITE_COLOR = (255, 255, 255)
@@ -184,7 +188,7 @@ def display_race_result(screen, score):
 def main():
     # Initialize the game
     pg.init()
-    screen = pg.display.set_mode((1280, 720))
+    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
     running = True
@@ -224,8 +228,8 @@ def main():
     speed_increase_interval = 15000  # Interval to increase speed (in milliseconds)
     last_speed_increase_time = pg.time.get_ticks()
     # Define border rectangles
-    left_border = pg.Rect(0, 0, 353, 720)
-    right_border = pg.Rect(935, 0, 353, 720)
+    left_border = pg.Rect(0, 0, 353, SCREEN_HEIGHT)
+    right_border = pg.Rect(935, 0, 353, SCREEN_HEIGHT)
 
     def draw_pause_icon():
         pause_icon = pg.image.load('main-game contents/Icons/Paused.png').convert_alpha()
@@ -263,7 +267,7 @@ def main():
             speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
     def draw_border():
-        border = pg.Surface((353, 720), pg.SRCALPHA).convert()
+        border = pg.Surface((353, SCREEN_HEIGHT), pg.SRCALPHA).convert()
         screen.blit(border, (0, 0))
         screen.blit(border, (935, 0))
 
