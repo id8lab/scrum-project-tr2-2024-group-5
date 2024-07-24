@@ -37,6 +37,13 @@ MOVEMENT_SOUNDS = {
 BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
        "main-game contents/Audio/bgm3.mp3", "main-game contents/Audio/bgm4.mp3"]
 
+POWER_UPS = {
+    "invincibility": "main-game contents/PowerUps/invincibility.png",
+    "obstacle_clear": "main-game contents/PowerUps/obstacle_clear.png",
+    "point_up": "main-game contents/PowerUps/point_up.png",
+    "life_up": "main-game contents/PowerUps/life_up.png"
+}
+
 
 # Define classes
 class Score:
@@ -125,6 +132,32 @@ class MovementSounds:
             channel.stop()
 
 
+class PowerUp:
+    def __init__(self, power_up_type, image_path, position):
+        self.type = power_up_type
+        self.image = pg.image.load(image_path).convert_alpha()
+        self.image = pg.transform.scale(self.image, (50, 50))
+        self.rect = self.image.get_rect(midtop=position)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def apply_effect(self, player, score, obstacles, spawn_times):
+        if self.type == "invincibility":
+            player.invincible_until = pg.time.get_ticks() + 5000  # 5 seconds
+        elif self.type == "obstacle_clear":
+            obstacles.clear()
+            spawn_times["obstacle"] = pg.time.get_ticks()  # Reset obstacle spawn time
+        elif self.type == "point_up":
+            score.double_points_until = pg.time.get_ticks() + 5000  # 5 seconds
+        elif self.type == "life_up":
+            if player.health < player.max_health:
+                player.health += 1
+
+    def get_rect(self):
+        return self.rect
+
+
 def display_race_result(screen, score):
     screen.fill((0, 0, 0))
 
@@ -190,6 +223,7 @@ def main():
     running = True
     dt = 0
     paused = False
+    power_ups = []
     road_background = pg.image.load('main-game contents/Backgrounds/Road_Background.jpg')
     resized_background = pg.transform.scale(road_background, (1290, 723))
     score = Score()
@@ -226,6 +260,12 @@ def main():
     # Define border rectangles
     left_border = pg.Rect(0, 0, 353, 720)
     right_border = pg.Rect(935, 0, 353, 720)
+
+    def spawn_power_up():
+        power_up_type = random.choice(list(POWER_UPS.keys()))
+        power_up_image = POWER_UPS[power_up_type]
+        power_up = PowerUp(power_up_type, power_up_image, (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+        power_ups.append(power_up)
 
     def draw_pause_icon():
         pause_icon = pg.image.load('main-game contents/Icons/Paused.png').convert_alpha()
@@ -346,6 +386,21 @@ def main():
             current_time = pg.time.get_ticks()
             score.update(current_time, increment=1, interval=500)
             draw_pause_icon()
+
+            # Manage power-ups
+            for power_up in power_ups:
+                power_up.rect.y += scroll_speed
+                if power_up.rect.top > screen.get_height():
+                    power_ups.remove(power_up)
+                else:
+                    power_up.draw(screen)
+                    if power_up.get_rect().colliderect(player.get_rect()):
+                        power_up.apply_effect(player, score, obstacles, spawn_times)
+                        power_ups.remove(power_up)
+
+            # Spawn power-ups periodically
+            if random.random() < 0.01:  # Adjust probability as needed
+                spawn_power_up()
 
             for entity_type, last_spawn_time in spawn_times.items():
                 if (current_time - last_spawn_time) >= 5000 and entity_type == "obstacle":
