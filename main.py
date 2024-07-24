@@ -438,6 +438,13 @@ def main():
                 scroll_speed += 1
                 last_speed_increase_time = current_time
 
+            if (player.pos.x < -100 or player.pos.x > (SCREEN_WIDTH + 50) - PLAYER_SIZE_X or player.pos.y < 0 or player.pos.y >
+                    (SCREEN_HEIGHT + 190) - PLAYER_SIZE_Y):
+                bgm_manager.stop()
+                movement_sounds.stop_all()
+                display_race_result(screen, score.score)
+                return
+
             pg.display.flip()
             dt = clock.tick(60) / 1000
 
