@@ -181,12 +181,141 @@ def display_race_result(screen, score):
         pg.display.flip()
 
 
+def main_menu(screen):
+    menu_font = pg.font.SysFont('Arial', 40)
+    menu_background = pg.image.load('main-game contents/Backgrounds/mainmenubackground.jpg')
+    menu_background = pg.transform.scale(menu_background, (1280, 720))
+
+    buttons = {
+        'Play': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 300, INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT),
+        'Settings': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 380, INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT),
+        'Leaderboard': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 460, INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT),
+        'Quit': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 540, INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+    }
+
+    button_colors = {
+        'Play': (0, 200, 0),
+        'Settings': (0, 0, 200),
+        'Leaderboard': (200, 200, 0),
+        'Quit': (200, 0, 0)
+    }
+
+    while True:
+        screen.blit(menu_background, (0, 0))
+
+        for button_text, button_rect in buttons.items():
+            pg.draw.rect(screen, button_colors[button_text], button_rect)
+            text_surface = menu_font.render(button_text, True, WHITE_COLOR)
+            screen.blit(text_surface, (button_rect.x + (INGAME_BUTTON_WIDTH - text_surface.get_width()) // 2,
+                                       button_rect.y + (INGAME_BUTTON_HEIGHT - text_surface.get_height()) // 2))
+
+        pg.display.flip()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                for button_text, button_rect in buttons.items():
+                    if button_rect.collidepoint(mouse_pos):
+                        if button_text == 'Play':
+                            return  # Start the game
+                        elif button_text == 'Settings':
+                            settings_menu(screen)
+                        elif button_text == 'Leaderboard':
+                            leaderboard_menu(screen)
+                        elif button_text == 'Quit':
+                            pg.quit()
+                            return
+
+
+def settings_menu(screen):
+    settings_font = pg.font.SysFont('Arial', 30)
+    settings_background = pg.Surface(screen.get_size())
+    settings_background.fill((0, 0, 0))
+    settings_background.set_alpha(180)
+
+    while True:
+        screen.blit(settings_background, (0, 0))
+        font = pg.font.SysFont('Arial', 50)
+        text = font.render("Settings", True, WHITE_COLOR)
+        text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
+        screen.blit(text, text_rect)
+
+        # Controls and Volume Settings Placeholder
+        controls_text = settings_font.render("Controls: W, A, S, D to move. ESC to pause.", True, WHITE_COLOR)
+        volume_text = settings_font.render("Volume Settings: Use sliders in the settings file.", True, WHITE_COLOR)
+        screen.blit(controls_text, (50, 150))
+        screen.blit(volume_text, (50, 200))
+
+        # Button to return to Main Menu
+        return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
+                                INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+        pg.draw.rect(screen, RED_COLOR, return_button)
+        return_text = settings_font.render('Back to Menu', True, WHITE_COLOR)
+        screen.blit(return_text, (return_button.x + (INGAME_BUTTON_WIDTH - return_text.get_width()) // 2,
+                                  return_button.y + (INGAME_BUTTON_HEIGHT - return_text.get_height()) // 2))
+
+        pg.display.flip()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if return_button.collidepoint(mouse_pos):
+                    return
+
+
+def leaderboard_menu(screen):
+    leaderboard_font = pg.font.SysFont('Arial', 30)
+    leaderboard_background = pg.Surface(screen.get_size())
+    leaderboard_background.fill((0, 0, 0))
+    leaderboard_background.set_alpha(180)
+
+    top_scores = [1000, 900, 800, 700, 600]  # Example scores
+
+    while True:
+        screen.blit(leaderboard_background, (0, 0))
+        font = pg.font.SysFont('Arial', 50)
+        text = font.render("Leaderboard", True, WHITE_COLOR)
+        text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
+        screen.blit(text, text_rect)
+
+        # Display top 5 scores
+        for i, score in enumerate(top_scores):
+            score_text = leaderboard_font.render(f"{i + 1}. Score: {score}", True, WHITE_COLOR)
+            screen.blit(score_text, (50, 150 + i * 40))
+
+        # Button to return to Main Menu
+        return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
+                                INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+        pg.draw.rect(screen, RED_COLOR, return_button)
+        return_text = leaderboard_font.render('Back to Menu', True, WHITE_COLOR)
+        screen.blit(return_text, (return_button.x + (INGAME_BUTTON_WIDTH - return_text.get_width()) // 2,
+                                  return_button.y + (INGAME_BUTTON_HEIGHT - return_text.get_height()) // 2))
+
+        pg.display.flip()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if return_button.collidepoint(mouse_pos):
+                    return
+
+
 def main():
     # Initialize the game
     pg.init()
     screen = pg.display.set_mode((1280, 720))
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
+    main_menu(screen)
     running = True
     dt = 0
     paused = False
