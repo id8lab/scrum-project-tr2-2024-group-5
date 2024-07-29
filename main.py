@@ -181,12 +181,159 @@ def display_race_result(screen, score):
         pg.display.flip()
 
 
+import pygame as pg
+
+
+def vehicle_type_selection_screen(screen, vehicle_type):
+    # Paths to images for different types of the selected vehicle
+    VEHICLE_TYPES = {
+        "roadster": ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
+                     "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png"],
+        "supercar": ["main-game contents/Vehicles/supercar1.png", "main-game contents/Vehicles/supercar2.png",
+                     "main-game contents/Vehicles/supercar3.png", "main-game contents/Vehicles/supercar4.png"],
+        "motorbike": ["main-game contents/Vehicles/motorbike1.png", "main-game contents/Vehicles/motorbike2.png",
+                      "main-game contents/Vehicles/motorbike3.png", "main-game contents/Vehicles/motorbike4.png"],
+        "SUV": ["main-game contents/Vehicles/SUV1.png", "main-game contents/Vehicles/SUV2.png",
+                "main-game contents/Vehicles/SUV3.png", "main-game contents/Vehicles/SUV4.png"]
+    }
+
+    vehicle_images = [pg.image.load(path).convert_alpha() for path in VEHICLE_TYPES[vehicle_type]]
+    scaled_vehicle_images = [pg.transform.scale(image, (50, 100)) for image in vehicle_images]  # Scale vehicle images
+
+    # Adjust the spacing between vehicles
+    vehicle_width = 50
+    vehicle_spacing = 250  # Increase the spacing here
+    num_vehicles = len(scaled_vehicle_images)
+    total_width = num_vehicles * vehicle_width + (num_vehicles - 1) * vehicle_spacing
+    start_x = (screen.get_width() - total_width) // 2  # Center the vehicles horizontally
+
+    vehicle_rects = [
+        image.get_rect(topleft=(start_x + i * (vehicle_width + vehicle_spacing), screen.get_height() // 2 - 50)) for
+        i, image in
+        enumerate(scaled_vehicle_images)]
+
+    selected_vehicle_index = None  # Index of the currently selected vehicle
+    hovered_vehicle_index = None  # Index of the currently hovered vehicle
+
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+
+        # Draw the vehicle images
+        for i, (image, rect) in enumerate(zip(scaled_vehicle_images, vehicle_rects)):
+            screen.blit(image, rect)
+            if i == selected_vehicle_index:
+                # Highlight the selected vehicle
+                pg.draw.rect(screen, (255, 255, 0), rect, 3)  # Yellow border
+            elif i == hovered_vehicle_index:
+                # Highlight the hovered vehicle
+                pg.draw.rect(screen, (0, 255, 0), rect, 3)  # Green border
+
+        # Draw the selection prompt text
+        font = pg.font.SysFont('Arial', 30)
+        text = font.render(f"Select {vehicle_type.capitalize()} Type: Click on the vehicle to choose", True,
+                           (255, 255, 255))
+        screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                for i, rect in enumerate(vehicle_rects):
+                    if rect.collidepoint(mouse_pos):
+                        selected_vehicle_index = i
+                        return VEHICLE_TYPES[vehicle_type][i]  # Return the path of the selected vehicle
+
+            if event.type == pg.MOUSEMOTION:
+                mouse_pos = event.pos
+                hovered_vehicle_index = None
+                for i, rect in enumerate(vehicle_rects):
+                    if rect.collidepoint(mouse_pos):
+                        hovered_vehicle_index = i
+
+        pg.display.flip()
+
+
+def vehicle_selection_screen(screen):
+    # Vehicle type image paths
+    VEHICLE_TYPES = ["roadster", "supercar", "motorbike", "SUV"]
+    VEHICLE_IMAGES = {
+        "roadster": "main-game contents/Vehicles/roadster1.png",
+        "supercar": "main-game contents/Vehicles/supercar1.png",
+        "motorbike": "main-game contents/Vehicles/motorbike2.png",
+        "SUV": "main-game contents/Vehicles/SUV1.png"
+    }
+
+    # Load and scale vehicle images
+    vehicle_images = [pg.image.load(VEHICLE_IMAGES[vehicle_type]).convert_alpha() for vehicle_type in VEHICLE_TYPES]
+    scaled_vehicle_images = [pg.transform.scale(image, (50, 100)) for image in vehicle_images]  # Scale vehicle images
+    vehicle_rects = [image.get_rect(center=(200 + i * 250, screen.get_height() // 2)) for i, image in
+                     enumerate(scaled_vehicle_images)]
+
+    selected_vehicle_type = None  # Currently selected vehicle type
+    hovered_vehicle_type = None  # Currently hovered vehicle type
+
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+
+        # Draw the vehicle type images
+        for i, (image, rect) in enumerate(zip(scaled_vehicle_images, vehicle_rects)):
+            screen.blit(image, rect)
+            if VEHICLE_TYPES[i] == selected_vehicle_type:
+                # Highlight the selected vehicle type
+                pg.draw.rect(screen, (255, 255, 0), rect, 3)  # Yellow border
+            elif VEHICLE_TYPES[i] == hovered_vehicle_type:
+                # Highlight the hovered vehicle type
+                pg.draw.rect(screen, (0, 255, 0), rect, 3)  # Green border
+
+        # Draw the selection prompt text
+        font = pg.font.SysFont('Arial', 50)
+        text = font.render("Select Vehicle Type: Click on the vehicle to choose", True, (255, 255, 255))
+        screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                for i, rect in enumerate(vehicle_rects):
+                    if rect.collidepoint(mouse_pos):
+                        selected_vehicle_type = VEHICLE_TYPES[i]
+                        # Proceed to the specific type selection screen
+                        selected_vehicle_path = vehicle_type_selection_screen(screen, selected_vehicle_type)
+                        if selected_vehicle_path:
+                            return selected_vehicle_path  # Return the path of the final selected vehicle
+
+            if event.type == pg.MOUSEMOTION:
+                mouse_pos = event.pos
+                hovered_vehicle_type = None
+                for i, rect in enumerate(vehicle_rects):
+                    if rect.collidepoint(mouse_pos):
+                        hovered_vehicle_type = VEHICLE_TYPES[i]
+
+        pg.display.flip()
+
+
 def main():
     # Initialize the game
     pg.init()
     screen = pg.display.set_mode((1280, 720))
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
+
+    # Display the vehicle selection screen and get the selected vehicle
+    selected_vehicle_path = vehicle_selection_screen(screen)
+    if selected_vehicle_path is None:
+        pg.quit()
+        return
+
+    # Initialize game variables
     running = True
     dt = 0
     paused = False
@@ -200,7 +347,7 @@ def main():
     tree_props_pos_y2 = -723
     obstacle_x_pos_1 = 390
     obstacle_x_pos_2 = 900
-    player = Player(random.choice(VEHICLES), (screen.get_width() / 2, screen.get_height() / 2))
+    player = Player(selected_vehicle_path, (screen.get_width() / 2, screen.get_height() / 2))
     pg.mixer.Sound(random.choice(BGM)).play(-1).set_volume(0.6)
     obstacle_images = [pg.transform.scale(pg.image.load(obstacle), (50, 50)) for obstacle in OBSTACLES]
     obstacles = []
@@ -221,11 +368,12 @@ def main():
     movement_sounds = MovementSounds(MOVEMENT_SOUNDS)
     bgm_manager.play_random()
     scroll_speed = 10  # Initial scroll speed
-    speed_increase_interval = 15000  # Interval to increase speed (in milliseconds)
+    speed_increase_interval = 15000  # Interval (in milliseconds) to increase speed
     last_speed_increase_time = pg.time.get_ticks()
-    # Define border rectangles
+    # Define boundary rectangles
     left_border = pg.Rect(0, 0, 353, 720)
     right_border = pg.Rect(935, 0, 353, 720)
+
 
     def draw_pause_icon():
         pause_icon = pg.image.load('main-game contents/Icons/Paused.png').convert_alpha()
