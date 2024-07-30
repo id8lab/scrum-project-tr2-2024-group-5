@@ -167,7 +167,7 @@ def display_race_result(screen, score):
                 if restart_button.collidepoint(mouse_pos):
                     main()  # Restart game
                 elif quit_button.collidepoint(mouse_pos):
-                    pg.quit()
+                    main_menu_display()
                     return
 
         # Render button text
@@ -180,16 +180,21 @@ def display_race_result(screen, score):
 
         pg.display.flip()
 
+
 def main_menu(screen):
     menu_font = pg.font.SysFont('Arial', 40)
     menu_background = pg.image.load('main-game contents/Backgrounds/mainmenubackground.jpg')
     menu_background = pg.transform.scale(menu_background, (1280, 720))
 
     buttons = {
-        'Play': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 300, INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT),
-        'Settings': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 380, INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT),
-        'Leaderboard': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 460, INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT),
-        'Quit': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 540, INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+        'Play': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 300, INGAME_BUTTON_WIDTH,
+                        INGAME_BUTTON_HEIGHT),
+        'Settings': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 380, INGAME_BUTTON_WIDTH,
+                            INGAME_BUTTON_HEIGHT),
+        'Leaderboard': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 460, INGAME_BUTTON_WIDTH,
+                               INGAME_BUTTON_HEIGHT),
+        'Quit': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 540, INGAME_BUTTON_WIDTH,
+                        INGAME_BUTTON_HEIGHT)
     }
 
     button_colors = {
@@ -219,6 +224,7 @@ def main_menu(screen):
                 for button_text, button_rect in buttons.items():
                     if button_rect.collidepoint(mouse_pos):
                         if button_text == 'Play':
+                            main()
                             return  # Start the game
                         elif button_text == 'Settings':
                             settings_menu(screen)
@@ -308,13 +314,18 @@ def leaderboard_menu(screen):
                     return
 
 
+def main_menu_display():
+    pg.init()
+    pg.display.set_caption('Top-Down Race')
+    screen = pg.display.set_mode((1280, 720))
+    main_menu(screen)
+
+
 def main():
     # Initialize the game
-    pg.init()
     screen = pg.display.set_mode((1280, 720))
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
-    main_menu(screen)
     running = True
     dt = 0
     paused = False
@@ -571,4 +582,4 @@ def main():
     pg.quit()
 
 
-main()
+main_menu_display()
