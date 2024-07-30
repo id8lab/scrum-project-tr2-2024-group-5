@@ -36,6 +36,7 @@ MOVEMENT_SOUNDS = {
 }
 BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
        "main-game contents/Audio/bgm3.mp3", "main-game contents/Audio/bgm4.mp3"]
+BGM_LOBBY = ["main-game contents/Audio/lobby.mp3", ]
 
 
 # Define classes
@@ -93,13 +94,14 @@ class BackgroundMusic:
     def __init__(self, bgm_paths):
         self.bgm_paths = bgm_paths
         self.current_bgm = None
+        self.volume = 0.4
 
     def play_random(self):
         bgm_play_track = random.choice(self.bgm_paths)
         print(f"Playing BGM: {bgm_play_track}")
         self.current_bgm = pg.mixer.music.load(bgm_play_track)
         pg.mixer.music.play(-1)
-        pg.mixer.music.set_volume(0.4)
+        pg.mixer.music.set_volume(self.volume)
 
     def stop(self):
         pg.mixer.music.stop()
@@ -109,8 +111,9 @@ class MovementSounds:
     def __init__(self, move_sounds_paths):
         self.move_channels = {key: pg.mixer.Channel(i) for i, key in enumerate(move_sounds_paths.keys())}
         self.move_sounds = {key: pg.mixer.Sound(path) for key, path in move_sounds_paths.items()}
+        self.volume = 1
         for sound in self.move_sounds.values():
-            sound.set_volume(1)
+            sound.set_volume(self.volume)
 
     def play(self, key):
         if key in self.move_channels:
@@ -189,7 +192,7 @@ def main_menu(screen):
     buttons = {
         'Play': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 300, INGAME_BUTTON_WIDTH,
                         INGAME_BUTTON_HEIGHT),
-        'Settings': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 380, INGAME_BUTTON_WIDTH,
+        'Controls': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 380, INGAME_BUTTON_WIDTH,
                             INGAME_BUTTON_HEIGHT),
         'Leaderboard': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 460, INGAME_BUTTON_WIDTH,
                                INGAME_BUTTON_HEIGHT),
@@ -199,7 +202,7 @@ def main_menu(screen):
 
     button_colors = {
         'Play': (0, 200, 0),
-        'Settings': (0, 0, 200),
+        'Controls': (0, 0, 200),
         'Leaderboard': (200, 200, 0),
         'Quit': (200, 0, 0)
     }
@@ -226,8 +229,8 @@ def main_menu(screen):
                         if button_text == 'Play':
                             main()
                             return  # Start the game
-                        elif button_text == 'Settings':
-                            settings_menu(screen)
+                        elif button_text == 'Controls':
+                            controls(screen)
                         elif button_text == 'Leaderboard':
                             leaderboard_menu(screen)
                         elif button_text == 'Quit':
@@ -235,7 +238,7 @@ def main_menu(screen):
                             return
 
 
-def settings_menu(screen):
+def controls(screen):
     settings_font = pg.font.SysFont('Arial', 30)
     settings_background = pg.Surface(screen.get_size())
     settings_background.fill((0, 0, 0))
@@ -244,13 +247,14 @@ def settings_menu(screen):
     while True:
         screen.blit(settings_background, (0, 0))
         font = pg.font.SysFont('Arial', 50)
-        text = font.render("Settings", True, WHITE_COLOR)
+        text = font.render("Controls", True, WHITE_COLOR)
         text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
         screen.blit(text, text_rect)
 
         # Controls and Volume Settings Placeholder
         controls_text = settings_font.render("Controls: W, A, S, D to move. ESC to pause.", True, WHITE_COLOR)
-        volume_text = settings_font.render("Volume Settings: Use sliders in the settings file.", True, WHITE_COLOR)
+        volume_text = settings_font.render("Volume Settings: Use the Left (decrease) and Right (increase)"
+                                           "arrow keys to adjust the volume.", True, WHITE_COLOR)
         screen.blit(controls_text, (50, 150))
         screen.blit(volume_text, (50, 200))
 
@@ -318,8 +322,9 @@ def main_menu_display():
     pg.init()
     pg.display.set_caption('Top-Down Race')
     screen = pg.display.set_mode((1280, 720))
+    bgm_manager = BackgroundMusic(BGM_LOBBY)
+    bgm_manager.play_random()
     main_menu(screen)
-
 
 def main():
     # Initialize the game
@@ -340,7 +345,6 @@ def main():
     obstacle_x_pos_1 = 390
     obstacle_x_pos_2 = 900
     player = Player(random.choice(VEHICLES), (screen.get_width() / 2, screen.get_height() / 2))
-    pg.mixer.Sound(random.choice(BGM)).play(-1).set_volume(0.6)
     obstacle_images = [pg.transform.scale(pg.image.load(obstacle), (50, 50)) for obstacle in OBSTACLES]
     obstacles = []
     spawn_times = {
@@ -552,10 +556,6 @@ def main():
                 player.pos.x -= 300 * dt * speed_modifier
             if keys[pg.K_d]:
                 player.pos.x += 300 * dt * speed_modifier
-            if keys[pg.K_l]:
-                vehicle_choice = random.choice(VEHICLES)
-                player.image = pg.image.load(vehicle_choice).convert_alpha()
-                player.image = pg.transform.scale(player.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
 
             if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
                 movement_sounds.stop_all()
