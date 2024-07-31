@@ -3,9 +3,8 @@ import random
 import json
 
 SCREEN_HEIGHT = 720
-
 SCREEN_WIDTH = 1280
-
+LEADERBOARD_FILE = "leaderboard.json"
 ICON_SIZE = (100, 100)
 RED_COLOR = (200, 0, 0)  # Red
 WHITE_COLOR = (255, 255, 255)
@@ -31,10 +30,10 @@ MOVEMENT_SOUNDS = {
     "s": "main-game contents/Audio/motor stop.mp3"
 }
 BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
-       "main-game contents/Audio/bgm3.mp3", "main-game contents/Audio/bgm4.mp3"]
+       "main-game contents/Audio/bgm3.mp3", "main-game contents/Audio/bgm4.mp3",
+       "main-game contents/Audio/bgm5.mp3"]
 BGM_LOBBY = ["main-game contents/Audio/lobby.mp3"]
-
-
+BGM_RESULT = ["main-game contents/Audio/result.mp3"]
 POWER_UPS = {
     "invincibility": "main-game contents/PowerUps/invincibility.png",
     "point_up": "main-game contents/PowerUps/point_up.png",
@@ -65,47 +64,15 @@ class Score:
         self.score = 0
         self.last_update_time = pg.time.get_ticks()
 
-LEADERBOARD_FILE = "leaderboard.json"
 
 def save_score(score):
     try:
-        # 尝试加载现有的排行榜
         with open(LEADERBOARD_FILE, "r") as file:
             leaderboard = json.load(file)
     except FileNotFoundError:
-        # 如果文件不存在，则创建一个空的排行榜
         leaderboard = []
-
-    # 将新得分添加到排行榜中
     leaderboard.append(score)
-
-    # 排序并保留前 5 名
     leaderboard = sorted(leaderboard, reverse=True)[:5]
-
-    # 将更新后的排行榜保存回文件
-    with open(LEADERBOARD_FILE, "w") as file:
-        json.dump(leaderboard, file)
-
-
-LEADERBOARD_FILE = "leaderboard.json"
-
-
-def save_score(score):
-    try:
-        # 尝试加载现有的排行榜
-        with open(LEADERBOARD_FILE, "r") as file:
-            leaderboard = json.load(file)
-    except FileNotFoundError:
-        # 如果文件不存在，则创建一个空的排行榜
-        leaderboard = []
-
-    # 将新得分添加到排行榜中
-    leaderboard.append(score)
-
-    # 排序并保留前 5 名
-    leaderboard = sorted(leaderboard, reverse=True)[:5]
-
-    # 将更新后的排行榜保存回文件
     with open(LEADERBOARD_FILE, "w") as file:
         json.dump(leaderboard, file)
 
@@ -212,6 +179,8 @@ class PowerUp:
 def display_race_result(screen, score):
     screen.fill((0, 0, 0))
     save_score(score)
+    bgm = BackgroundMusic(BGM_RESULT)
+    bgm.play_random()
 
     # Create a larger font for the result and score
     large_font = pg.font.SysFont('Arial', 50)
@@ -267,7 +236,7 @@ def display_race_result(screen, score):
 
 
 def main_menu(screen):
-    menu_font = pg.font.SysFont('Arial', 40)
+    menu_font = pg.font.SysFont('Arial', 30)
     menu_background = pg.image.load('main-game contents/Backgrounds/mainmenubackground.jpg')
     menu_background = pg.transform.scale(menu_background, (1280, 720))
 
@@ -560,7 +529,7 @@ def main():
     # Display the vehicle selection screen and get the selected vehicle
     selected_vehicle_path = vehicle_selection_screen(screen)
     if selected_vehicle_path is None:
-        main_menu_display()
+        pg.quit()
         return
     running = True
     dt = 0
@@ -603,7 +572,6 @@ def main():
     left_border = pg.Rect(0, 0, 353, SCREEN_HEIGHT)
     right_border = pg.Rect(935, 0, 353, SCREEN_HEIGHT)
 
-
     def display_timers(screen, player, score, font):
         current_time = pg.time.get_ticks()
         invincibility_time_left = max(0, player.invincible_until - current_time)
@@ -620,7 +588,6 @@ def main():
         power_up_image = POWER_UPS[power_up_type]
         power_up = PowerUp(power_up_type, power_up_image, (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
         power_ups.append(power_up)
-
 
     def draw_pause_icon():
         pause_icon = pg.image.load('main-game contents/Icons/Paused.png').convert_alpha()
