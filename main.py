@@ -157,7 +157,7 @@ class PowerUp:
     def __init__(self, power_up_type, image_path, position):
         self.type = power_up_type
         self.image = pg.image.load(image_path).convert_alpha()
-        self.image = pg.transform.scale(self.image, (50, 50))
+        self.image = pg.transform.scale(self.image, (60, 60))
         self.rect = self.image.get_rect(midtop=position)
 
     def draw(self, screen):
