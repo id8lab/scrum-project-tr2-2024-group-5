@@ -123,6 +123,10 @@ class BackgroundMusic:
     def stop(self):
         pg.mixer.music.stop()
 
+    def set_volume(self, volume_change):
+        self.volume = max(0, min(1, self.volume + volume_change))
+        pg.mixer.music.set_volume(self.volume)
+
 
 class MovementSounds:
     def __init__(self, move_sounds_paths):
@@ -143,6 +147,10 @@ class MovementSounds:
     def stop_all(self):
         for channel in self.move_channels.values():
             channel.stop()
+
+    def set_volume(self, volume_change):
+        self.volume = max(0, min(1, self.volume + volume_change))
+        pg.mixer.music.set_volume(self.volume)
 
 
 def display_race_result(screen, score):
@@ -272,7 +280,8 @@ def controls(screen):
         screen.blit(text, text_rect)
 
         # Controls and Volume Settings Placeholder
-        controls_text = settings_font.render("Controls: W, A, S, D to move. ESC to pause.", True, WHITE_COLOR)
+        controls_text = settings_font.render("Gameplay: W, A, S, D to move. ESC to pause.",
+                                             True, WHITE_COLOR)
         volume_text = settings_font.render("Volume Settings: Use the Left (decrease) and Right (increase)"
                                            "arrow keys to adjust the volume.", True, WHITE_COLOR)
         screen.blit(controls_text, (50, 150))
@@ -633,6 +642,12 @@ def main():
                         movement_sounds.play("s")
                     elif event.key == pg.K_d:
                         movement_sounds.play("d")
+                if event.key == pg.K_UP:
+                    bgm_manager.set_volume(0.1)
+                    movement_sounds.set_volume(0.1)
+                elif event.key == pg.K_DOWN:
+                    bgm_manager.set_volume(-0.1)
+                    movement_sounds.set_volume(-0.1)
             elif event.type == pg.KEYUP and not paused:
                 if event.key == pg.K_w:
                     movement_sounds.stop("w")
