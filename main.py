@@ -35,6 +35,13 @@ BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
 BGM_LOBBY = ["main-game contents/Audio/lobby.mp3"]
 
 
+POWER_UPS = {
+    "invincibility": "main-game contents/PowerUps/invincibility.png",
+    "point_up": "main-game contents/PowerUps/point_up.png",
+    "life_up": "main-game contents/PowerUps/life_up.png"
+}
+
+
 # Define classes
 class Score:
     def __init__(self, font_name='Arial', font_size=50, color=(255, 255, 255), initial_score=0):
@@ -42,6 +49,8 @@ class Score:
         self.font = pg.font.SysFont(font_name, font_size)
         self.color = color
         self.last_update_time = pg.time.get_ticks()
+        self.points = 0
+        self.double_points_until = 0
 
     def update(self, current_time, increment=1, interval=1000):
         if (current_time - self.last_update_time) >= interval:
@@ -78,11 +87,35 @@ def save_score(score):
         json.dump(leaderboard, file)
 
 
+LEADERBOARD_FILE = "leaderboard.json"
+
+
+def save_score(score):
+    try:
+        # 尝试加载现有的排行榜
+        with open(LEADERBOARD_FILE, "r") as file:
+            leaderboard = json.load(file)
+    except FileNotFoundError:
+        # 如果文件不存在，则创建一个空的排行榜
+        leaderboard = []
+
+    # 将新得分添加到排行榜中
+    leaderboard.append(score)
+
+    # 排序并保留前 5 名
+    leaderboard = sorted(leaderboard, reverse=True)[:5]
+
+    # 将更新后的排行榜保存回文件
+    with open(LEADERBOARD_FILE, "w") as file:
+        json.dump(leaderboard, file)
+
+
 class Player:
     def __init__(self, image_path, start_pos):
         self.image = pg.image.load(image_path).convert_alpha()
         self.image = pg.transform.scale(self.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
         self.pos = pg.Vector2(start_pos)
+        self.invincible_until = 0
         self.health = 3
         self.max_health = 3
         self.heart_image = pg.transform.scale(pg.image.load('main-game contents/Icons/heart.png'), (50, 50))
@@ -153,10 +186,31 @@ class MovementSounds:
         pg.mixer.music.set_volume(self.volume)
 
 
+class PowerUp:
+    def __init__(self, power_up_type, image_path, position):
+        self.type = power_up_type
+        self.image = pg.image.load(image_path).convert_alpha()
+        self.image = pg.transform.scale(self.image, (50, 50))
+        self.rect = self.image.get_rect(midtop=position)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def apply_effect(self, player, score, obstacles, spawn_times):
+        if self.type == "invincibility":
+            player.invincible_until = pg.time.get_ticks() + 5000  # 5 seconds
+        elif self.type == "point_up":
+            score.double_points_until = pg.time.get_ticks() + 5000  # 5 seconds
+        elif self.type == "life_up":
+            if player.health < player.max_health:
+                player.health += 1
+
+    def get_rect(self):
+        return self.rect
+
+
 def display_race_result(screen, score):
     screen.fill((0, 0, 0))
-
-    # 保存分数
     save_score(score)
 
     # Create a larger font for the result and score
@@ -501,6 +555,7 @@ def main():
     # Initialize the game
     screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pg.display.set_caption('Top-Down Race')
+    font = pg.font.Font(None, 36)
     clock = pg.time.Clock()
     # Display the vehicle selection screen and get the selected vehicle
     selected_vehicle_path = vehicle_selection_screen(screen)
@@ -510,6 +565,7 @@ def main():
     running = True
     dt = 0
     paused = False
+    power_ups = []
     road_background = pg.image.load('main-game contents/Backgrounds/Road_Background.jpg')
     resized_background = pg.transform.scale(road_background, (1290, 723))
     score = Score()
@@ -521,6 +577,7 @@ def main():
     obstacle_x_pos_1 = 390
     obstacle_x_pos_2 = 900
     player = Player(selected_vehicle_path, (screen.get_width() / 2, screen.get_height() / 2))
+    pg.mixer.Sound(random.choice(BGM)).play(-1).set_volume(0.6)
     obstacle_images = [pg.transform.scale(pg.image.load(obstacle), (50, 50)) for obstacle in OBSTACLES]
     obstacles = []
     spawn_times = {
@@ -545,6 +602,25 @@ def main():
     # Define border rectangles
     left_border = pg.Rect(0, 0, 353, SCREEN_HEIGHT)
     right_border = pg.Rect(935, 0, 353, SCREEN_HEIGHT)
+
+
+    def display_timers(screen, player, score, font):
+        current_time = pg.time.get_ticks()
+        invincibility_time_left = max(0, player.invincible_until - current_time)
+        double_points_time_left = max(0, score.double_points_until - current_time)
+
+        invincibility_text = font.render(f'Invincibility: {invincibility_time_left // 1000}', True, (255, 255, 255))
+        double_points_text = font.render(f'Double Points: {double_points_time_left // 1000}', True, (255, 255, 255))
+
+        screen.blit(invincibility_text, (10, 120))
+        screen.blit(double_points_text, (10, 150))
+
+    def spawn_power_up():
+        power_up_type = random.choice(list(POWER_UPS.keys()))
+        power_up_image = POWER_UPS[power_up_type]
+        power_up = PowerUp(power_up_type, power_up_image, (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
+        power_ups.append(power_up)
+
 
     def draw_pause_icon():
         pause_icon = pg.image.load('main-game contents/Icons/Paused.png').convert_alpha()
@@ -671,6 +747,22 @@ def main():
             current_time = pg.time.get_ticks()
             score.update(current_time, increment=1, interval=500)
             draw_pause_icon()
+            display_timers(screen, player, score, font)
+
+            # Manage power-ups
+            for power_up in power_ups:
+                power_up.rect.y += scroll_speed
+                if power_up.rect.top > screen.get_height():
+                    power_ups.remove(power_up)
+                else:
+                    power_up.draw(screen)
+                    if power_up.get_rect().colliderect(player.get_rect()):
+                        power_up.apply_effect(player, score, obstacles, spawn_times)
+                        power_ups.remove(power_up)
+
+            # Spawn power-ups periodically
+            if random.random() < 0.01:  # Adjust probability as needed
+                spawn_power_up()
 
             for entity_type, last_spawn_time in spawn_times.items():
                 if (current_time - last_spawn_time) >= 5000 and entity_type == "obstacle":
@@ -755,7 +847,6 @@ def main():
                 scroll_speed += 1
                 last_speed_increase_time = current_time
 
-                # Race is over once the player is off-screen
             if (player.pos.x < -100 or player.pos.x > SCREEN_WIDTH or player.pos.y < 0 or player.pos.y >
                     (SCREEN_HEIGHT + 150) - PLAYER_SIZE_Y):
                 bgm_manager.stop()
@@ -766,6 +857,7 @@ def main():
             pg.display.flip()
             dt = clock.tick(60) / 1000
 
+    pg.display.flip()
     movement_sounds.stop_all()
     bgm_manager.stop()
     display_race_result(screen, score.score)
