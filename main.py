@@ -1,5 +1,6 @@
 import pygame as pg
 import random
+import json
 
 SCREEN_HEIGHT = 720
 
@@ -31,7 +32,7 @@ MOVEMENT_SOUNDS = {
 }
 BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
        "main-game contents/Audio/bgm3.mp3", "main-game contents/Audio/bgm4.mp3"]
-BGM_LOBBY = ["main-game contents/Audio/lobby.mp3", ]
+BGM_LOBBY = ["main-game contents/Audio/lobby.mp3"]
 
 
 # Define classes
@@ -54,6 +55,27 @@ class Score:
     def reset(self):
         self.score = 0
         self.last_update_time = pg.time.get_ticks()
+
+LEADERBOARD_FILE = "leaderboard.json"
+
+def save_score(score):
+    try:
+        # 尝试加载现有的排行榜
+        with open(LEADERBOARD_FILE, "r") as file:
+            leaderboard = json.load(file)
+    except FileNotFoundError:
+        # 如果文件不存在，则创建一个空的排行榜
+        leaderboard = []
+
+    # 将新得分添加到排行榜中
+    leaderboard.append(score)
+
+    # 排序并保留前 5 名
+    leaderboard = sorted(leaderboard, reverse=True)[:5]
+
+    # 将更新后的排行榜保存回文件
+    with open(LEADERBOARD_FILE, "w") as file:
+        json.dump(leaderboard, file)
 
 
 class Player:
@@ -125,6 +147,9 @@ class MovementSounds:
 
 def display_race_result(screen, score):
     screen.fill((0, 0, 0))
+
+    # 保存分数
+    save_score(score)
 
     # Create a larger font for the result and score
     large_font = pg.font.SysFont('Arial', 50)
@@ -279,7 +304,12 @@ def leaderboard_menu(screen):
     leaderboard_background.fill((0, 0, 0))
     leaderboard_background.set_alpha(180)
 
-    top_scores = [1000, 900, 800, 700, 600]  # Example scores
+    # 尝试加载排行榜
+    try:
+        with open(LEADERBOARD_FILE, "r") as file:
+            top_scores = json.load(file)
+    except FileNotFoundError:
+        top_scores = []
 
     while True:
         screen.blit(leaderboard_background, (0, 0))
