@@ -243,7 +243,7 @@ def main_menu(screen):
     buttons = {
         'Play': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 300, INGAME_BUTTON_WIDTH,
                         INGAME_BUTTON_HEIGHT),
-        'Controls': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 380, INGAME_BUTTON_WIDTH,
+        'How to Play': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 380, INGAME_BUTTON_WIDTH,
                             INGAME_BUTTON_HEIGHT),
         'Leaderboard': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 460, INGAME_BUTTON_WIDTH,
                                INGAME_BUTTON_HEIGHT),
@@ -253,7 +253,7 @@ def main_menu(screen):
 
     button_colors = {
         'Play': (0, 200, 0),
-        'Controls': (0, 0, 200),
+        'How to Play': (0, 0, 200),
         'Leaderboard': (200, 200, 0),
         'Quit': (200, 0, 0)
     }
@@ -280,7 +280,7 @@ def main_menu(screen):
                         if button_text == 'Play':
                             main()
                             return  # Start the game
-                        elif button_text == 'Controls':
+                        elif button_text == 'How to Play':
                             controls(screen)
                         elif button_text == 'Leaderboard':
                             leaderboard_menu(screen)
@@ -311,12 +311,7 @@ def controls(screen):
         screen.blit(volume_text, (50, 200))
 
         # Button to return to Main Menu
-        return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
-                                INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
-        pg.draw.rect(screen, RED_COLOR, return_button)
-        return_text = settings_font.render('Back to Menu', True, WHITE_COLOR)
-        screen.blit(return_text, (return_button.x + (INGAME_BUTTON_WIDTH - return_text.get_width()) // 2,
-                                  return_button.y + (INGAME_BUTTON_HEIGHT - return_text.get_height()) // 2))
+        return_button = draw_return_button(font, screen, text)
 
         pg.display.flip()
 
@@ -356,12 +351,7 @@ def leaderboard_menu(screen):
             screen.blit(score_text, (50, 150 + i * 40))
 
         # Button to return to Main Menu
-        return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
-                                INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
-        pg.draw.rect(screen, RED_COLOR, return_button)
-        return_text = leaderboard_font.render('Back to Menu', True, WHITE_COLOR)
-        screen.blit(return_text, (return_button.x + (INGAME_BUTTON_WIDTH - return_text.get_width()) // 2,
-                                  return_button.y + (INGAME_BUTTON_HEIGHT - return_text.get_height()) // 2))
+        return_button = draw_return_button(font, screen, text)
 
         pg.display.flip()
 
@@ -424,12 +414,16 @@ def vehicle_type_selection_screen(screen, vehicle_type):
         font = pg.font.SysFont('Arial', 30)
         text = font.render(f"Select {vehicle_type.capitalize()} Type: Click on the vehicle to choose", True,
                            (255, 255, 255))
-        screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
+        return_button = draw_return_button(font, screen, text)
 
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
                 return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if return_button.collidepoint(mouse_pos):
+                    return
 
             if event.type == pg.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos
@@ -446,6 +440,17 @@ def vehicle_type_selection_screen(screen, vehicle_type):
                         hovered_vehicle_index = i
 
         pg.display.flip()
+
+
+def draw_return_button(font, screen, text):
+    screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
+    return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
+                            INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+    pg.draw.rect(screen, RED_COLOR, return_button)
+    return_text = font.render('Back', True, WHITE_COLOR)
+    screen.blit(return_text, (return_button.x + (INGAME_BUTTON_WIDTH - return_text.get_width()) // 2,
+                              return_button.y + (INGAME_BUTTON_HEIGHT - return_text.get_height()) // 2))
+    return return_button
 
 
 def vehicle_selection_screen(screen):
@@ -485,11 +490,17 @@ def vehicle_selection_screen(screen):
         font = pg.font.SysFont('Arial', 50)
         text = font.render("Select Vehicle Type: Click on the vehicle to choose", True, (255, 255, 255))
         screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
+        return_button = draw_return_button(font, screen, text)
 
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
                 return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if return_button.collidepoint(mouse_pos):
+                    main_menu_display()
+                    return
 
             if event.type == pg.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos
