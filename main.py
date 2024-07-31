@@ -1,6 +1,10 @@
 import pygame as pg
 import random
 
+SCREEN_HEIGHT = 720
+
+SCREEN_WIDTH = 1280
+
 ICON_SIZE = (100, 100)
 RED_COLOR = (200, 0, 0)  # Red
 WHITE_COLOR = (255, 255, 255)
@@ -175,7 +179,7 @@ def display_race_result(screen, score):
 
         # Render button text
         restart_text = normal_font.render('Try Again', True, WHITE_COLOR)
-        quit_text = normal_font.render('Quit', True, WHITE_COLOR)
+        quit_text = normal_font.render('Main Menu', True, WHITE_COLOR)
         screen.blit(restart_text, (restart_button.x + (INGAME_BUTTON_WIDTH - restart_text.get_width()) // 2,
                                    restart_button.y + (INGAME_BUTTON_HEIGHT - restart_text.get_height()) // 2))
         screen.blit(quit_text, (quit_button.x + (INGAME_BUTTON_WIDTH - quit_text.get_width()) // 2,
@@ -328,7 +332,7 @@ def main_menu_display():
 
 def main():
     # Initialize the game
-    screen = pg.display.set_mode((1280, 720))
+    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
     running = True
@@ -367,8 +371,8 @@ def main():
     speed_increase_interval = 15000  # Interval to increase speed (in milliseconds)
     last_speed_increase_time = pg.time.get_ticks()
     # Define border rectangles
-    left_border = pg.Rect(0, 0, 353, 720)
-    right_border = pg.Rect(935, 0, 353, 720)
+    left_border = pg.Rect(0, 0, 353, SCREEN_HEIGHT)
+    right_border = pg.Rect(935, 0, 353, SCREEN_HEIGHT)
 
     def draw_pause_icon():
         pause_icon = pg.image.load('main-game contents/Icons/Paused.png').convert_alpha()
@@ -406,7 +410,7 @@ def main():
             speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
     def draw_border():
-        border = pg.Surface((353, 720), pg.SRCALPHA).convert()
+        border = pg.Surface((353, SCREEN_HEIGHT), pg.SRCALPHA).convert()
         screen.blit(border, (0, 0))
         screen.blit(border, (935, 0))
 
@@ -572,6 +576,14 @@ def main():
             if (current_time - last_speed_increase_time) >= speed_increase_interval:
                 scroll_speed += 1
                 last_speed_increase_time = current_time
+
+                # Race is over once the player is off-screen
+            if (player.pos.x < -100 or player.pos.x > SCREEN_WIDTH or player.pos.y < 0 or player.pos.y >
+                    (SCREEN_HEIGHT + 150) - PLAYER_SIZE_Y):
+                bgm_manager.stop()
+                movement_sounds.stop_all()
+                display_race_result(screen, score.score)
+                return
 
             pg.display.flip()
             dt = clock.tick(60) / 1000
