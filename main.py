@@ -39,7 +39,6 @@ BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
 
 POWER_UPS = {
     "invincibility": "main-game contents/PowerUps/invincibility.png",
-    "obstacle_clear": "main-game contents/PowerUps/obstacle_clear.png",
     "point_up": "main-game contents/PowerUps/point_up.png",
     "life_up": "main-game contents/PowerUps/life_up.png"
 }
@@ -52,6 +51,8 @@ class Score:
         self.font = pg.font.SysFont(font_name, font_size)
         self.color = color
         self.last_update_time = pg.time.get_ticks()
+        self.points = 0
+        self.double_points_until = 0
 
     def update(self, current_time, increment=1, interval=1000):
         if (current_time - self.last_update_time) >= interval:
@@ -72,6 +73,7 @@ class Player:
         self.image = pg.image.load(image_path).convert_alpha()
         self.image = pg.transform.scale(self.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
         self.pos = pg.Vector2(start_pos)
+        self.invincible_until = 0
         self.health = 3
         self.max_health = 3
         self.heart_image = pg.transform.scale(pg.image.load('main-game contents/Icons/heart.png'), (50, 50))
@@ -145,9 +147,6 @@ class PowerUp:
     def apply_effect(self, player, score, obstacles, spawn_times):
         if self.type == "invincibility":
             player.invincible_until = pg.time.get_ticks() + 5000  # 5 seconds
-        elif self.type == "obstacle_clear":
-            obstacles.clear()
-            spawn_times["obstacle"] = pg.time.get_ticks()  # Reset obstacle spawn time
         elif self.type == "point_up":
             score.double_points_until = pg.time.get_ticks() + 5000  # 5 seconds
         elif self.type == "life_up":
@@ -218,6 +217,7 @@ def main():
     # Initialize the game
     pg.init()
     screen = pg.display.set_mode((1280, 720))
+    font = pg.font.Font(None, 36)
     pg.display.set_caption('Top-Down Race')
     clock = pg.time.Clock()
     running = True
@@ -260,6 +260,17 @@ def main():
     # Define border rectangles
     left_border = pg.Rect(0, 0, 353, 720)
     right_border = pg.Rect(935, 0, 353, 720)
+
+    def display_timers(screen, player, score, font):
+        current_time = pg.time.get_ticks()
+        invincibility_time_left = max(0, player.invincible_until - current_time)
+        double_points_time_left = max(0, score.double_points_until - current_time)
+
+        invincibility_text = font.render(f'Invincibility: {invincibility_time_left // 1000}', True, (255, 255, 255))
+        double_points_text = font.render(f'Double Points: {double_points_time_left // 1000}', True, (255, 255, 255))
+
+        screen.blit(invincibility_text, (10, 120))
+        screen.blit(double_points_text, (10, 150))
 
     def spawn_power_up():
         power_up_type = random.choice(list(POWER_UPS.keys()))
@@ -386,6 +397,7 @@ def main():
             current_time = pg.time.get_ticks()
             score.update(current_time, increment=1, interval=500)
             draw_pause_icon()
+            display_timers(screen, player, score, font)
 
             # Manage power-ups
             for power_up in power_ups:
@@ -492,6 +504,8 @@ def main():
             pg.display.flip()
             dt = clock.tick(60) / 1000
 
+
+    pg.display.flip()
     movement_sounds.stop_all()
     bgm_manager.stop()
     display_race_result(screen, score.score)
