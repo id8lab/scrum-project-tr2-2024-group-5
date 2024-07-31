@@ -1,5 +1,10 @@
 import pygame as pg
 import random
+import json
+
+SCREEN_HEIGHT = 720
+
+SCREEN_WIDTH = 1280
 
 ICON_SIZE = (100, 100)
 RED_COLOR = (200, 0, 0)  # Red
@@ -12,15 +17,6 @@ INGAME_BUTTON_HEIGHT = 60
 # Define constants
 OBSTACLES = ["main-game contents/Obstacles/Wood.png", "main-game contents/Obstacles/crate.png",
              "main-game contents/Obstacles/Stone.png"]
-VEHICLES = ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
-            "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png",
-            "main-game contents/Vehicles/supercar1.png", "main-game contents/Vehicles/supercar2.png",
-            "main-game contents/Vehicles/supercar3.png", "main-game contents/Vehicles/supercar4.png",
-            "main-game contents/Vehicles/SUV1.png", "main-game contents/Vehicles/SUV2.png",
-            "main-game contents/Vehicles/SUV3.png", "main-game contents/Vehicles/SUV4.png",
-            "main-game contents/Vehicles/motorbike1.png", "main-game contents/Vehicles/motorbike2.png",
-            "main-game contents/Vehicles/motorbike3.png", "main-game contents/Vehicles/motorbike4.png"
-            ]
 
 VEHICLE_SOUNDS = [
     "main-game contents/Audio/motorbike.mp3",
@@ -36,6 +32,7 @@ MOVEMENT_SOUNDS = {
 }
 BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
        "main-game contents/Audio/bgm3.mp3", "main-game contents/Audio/bgm4.mp3"]
+BGM_LOBBY = ["main-game contents/Audio/lobby.mp3"]
 
 POWER_UPS = {
     "invincibility": "main-game contents/PowerUps/invincibility.png",
@@ -66,6 +63,29 @@ class Score:
     def reset(self):
         self.score = 0
         self.last_update_time = pg.time.get_ticks()
+
+
+LEADERBOARD_FILE = "leaderboard.json"
+
+
+def save_score(score):
+    try:
+        # 尝试加载现有的排行榜
+        with open(LEADERBOARD_FILE, "r") as file:
+            leaderboard = json.load(file)
+    except FileNotFoundError:
+        # 如果文件不存在，则创建一个空的排行榜
+        leaderboard = []
+
+    # 将新得分添加到排行榜中
+    leaderboard.append(score)
+
+    # 排序并保留前 5 名
+    leaderboard = sorted(leaderboard, reverse=True)[:5]
+
+    # 将更新后的排行榜保存回文件
+    with open(LEADERBOARD_FILE, "w") as file:
+        json.dump(leaderboard, file)
 
 
 class Player:
@@ -102,24 +122,30 @@ class BackgroundMusic:
     def __init__(self, bgm_paths):
         self.bgm_paths = bgm_paths
         self.current_bgm = None
+        self.volume = 0.4
 
     def play_random(self):
         bgm_play_track = random.choice(self.bgm_paths)
         print(f"Playing BGM: {bgm_play_track}")
         self.current_bgm = pg.mixer.music.load(bgm_play_track)
         pg.mixer.music.play(-1)
-        pg.mixer.music.set_volume(0.4)
+        pg.mixer.music.set_volume(self.volume)
 
     def stop(self):
         pg.mixer.music.stop()
+
+    def set_volume(self, volume_change):
+        self.volume = max(0, min(1, self.volume + volume_change))
+        pg.mixer.music.set_volume(self.volume)
 
 
 class MovementSounds:
     def __init__(self, move_sounds_paths):
         self.move_channels = {key: pg.mixer.Channel(i) for i, key in enumerate(move_sounds_paths.keys())}
         self.move_sounds = {key: pg.mixer.Sound(path) for key, path in move_sounds_paths.items()}
+        self.volume = 1
         for sound in self.move_sounds.values():
-            sound.set_volume(1)
+            sound.set_volume(self.volume)
 
     def play(self, key):
         if key in self.move_channels:
@@ -132,6 +158,17 @@ class MovementSounds:
     def stop_all(self):
         for channel in self.move_channels.values():
             channel.stop()
+
+    def set_volume(self, volume_change):
+        self.volume = max(0, min(1, self.volume + volume_change))
+        pg.mixer.music.set_volume(self.volume)
+
+
+def display_race_result(screen, score):
+    screen.fill((0, 0, 0))
+
+    # 保存分数
+    save_score(score)
 
 
 class PowerUp:
@@ -199,12 +236,12 @@ def display_race_result(screen, score):
                 if restart_button.collidepoint(mouse_pos):
                     main()  # Restart game
                 elif quit_button.collidepoint(mouse_pos):
-                    pg.quit()
+                    main_menu_display()
                     return
 
         # Render button text
         restart_text = normal_font.render('Try Again', True, WHITE_COLOR)
-        quit_text = normal_font.render('Quit', True, WHITE_COLOR)
+        quit_text = normal_font.render('Main Menu', True, WHITE_COLOR)
         screen.blit(restart_text, (restart_button.x + (INGAME_BUTTON_WIDTH - restart_text.get_width()) // 2,
                                    restart_button.y + (INGAME_BUTTON_HEIGHT - restart_text.get_height()) // 2))
         screen.blit(quit_text, (quit_button.x + (INGAME_BUTTON_WIDTH - quit_text.get_width()) // 2,
@@ -213,13 +250,302 @@ def display_race_result(screen, score):
         pg.display.flip()
 
 
+def main_menu(screen):
+    menu_font = pg.font.SysFont('Arial', 40)
+    menu_background = pg.image.load('main-game contents/Backgrounds/mainmenubackground.jpg')
+    menu_background = pg.transform.scale(menu_background, (1280, 720))
+
+    buttons = {
+        'Play': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 300, INGAME_BUTTON_WIDTH,
+                        INGAME_BUTTON_HEIGHT),
+        'Controls': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 380, INGAME_BUTTON_WIDTH,
+                            INGAME_BUTTON_HEIGHT),
+        'Leaderboard': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 460, INGAME_BUTTON_WIDTH,
+                               INGAME_BUTTON_HEIGHT),
+        'Quit': pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, 540, INGAME_BUTTON_WIDTH,
+                        INGAME_BUTTON_HEIGHT)
+    }
+
+    button_colors = {
+        'Play': (0, 200, 0),
+        'Controls': (0, 0, 200),
+        'Leaderboard': (200, 200, 0),
+        'Quit': (200, 0, 0)
+    }
+
+    while True:
+        screen.blit(menu_background, (0, 0))
+
+        for button_text, button_rect in buttons.items():
+            pg.draw.rect(screen, button_colors[button_text], button_rect)
+            text_surface = menu_font.render(button_text, True, WHITE_COLOR)
+            screen.blit(text_surface, (button_rect.x + (INGAME_BUTTON_WIDTH - text_surface.get_width()) // 2,
+                                       button_rect.y + (INGAME_BUTTON_HEIGHT - text_surface.get_height()) // 2))
+
+        pg.display.flip()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                for button_text, button_rect in buttons.items():
+                    if button_rect.collidepoint(mouse_pos):
+                        if button_text == 'Play':
+                            main()
+                            return  # Start the game
+                        elif button_text == 'Controls':
+                            controls(screen)
+                        elif button_text == 'Leaderboard':
+                            leaderboard_menu(screen)
+                        elif button_text == 'Quit':
+                            pg.quit()
+                            return
+
+
+def controls(screen):
+    settings_font = pg.font.SysFont('Arial', 30)
+    settings_background = pg.Surface(screen.get_size())
+    settings_background.fill((0, 0, 0))
+    settings_background.set_alpha(180)
+
+    while True:
+        screen.blit(settings_background, (0, 0))
+        font = pg.font.SysFont('Arial', 50)
+        text = font.render("Controls", True, WHITE_COLOR)
+        text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
+        screen.blit(text, text_rect)
+
+        # Controls and Volume Settings Placeholder
+        controls_text = settings_font.render("Gameplay: W, A, S, D to move. ESC to pause.",
+                                             True, WHITE_COLOR)
+        volume_text = settings_font.render("Volume Settings: Use the Left (decrease) and Right (increase)"
+                                           "arrow keys to adjust the volume.", True, WHITE_COLOR)
+        screen.blit(controls_text, (50, 150))
+        screen.blit(volume_text, (50, 200))
+
+        # Button to return to Main Menu
+        return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
+                                INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+        pg.draw.rect(screen, RED_COLOR, return_button)
+        return_text = settings_font.render('Back to Menu', True, WHITE_COLOR)
+        screen.blit(return_text, (return_button.x + (INGAME_BUTTON_WIDTH - return_text.get_width()) // 2,
+                                  return_button.y + (INGAME_BUTTON_HEIGHT - return_text.get_height()) // 2))
+
+        pg.display.flip()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if return_button.collidepoint(mouse_pos):
+                    return
+
+
+def leaderboard_menu(screen):
+    leaderboard_font = pg.font.SysFont('Arial', 30)
+    leaderboard_background = pg.Surface(screen.get_size())
+    leaderboard_background.fill((0, 0, 0))
+    leaderboard_background.set_alpha(180)
+
+    # 尝试加载排行榜
+    try:
+        with open(LEADERBOARD_FILE, "r") as file:
+            top_scores = json.load(file)
+    except FileNotFoundError:
+        top_scores = []
+
+    while True:
+        screen.blit(leaderboard_background, (0, 0))
+        font = pg.font.SysFont('Arial', 50)
+        text = font.render("Leaderboard", True, WHITE_COLOR)
+        text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
+        screen.blit(text, text_rect)
+
+        # Display top 5 scores
+        for i, score in enumerate(top_scores):
+            score_text = leaderboard_font.render(f"{i + 1}. Score: {score}", True, WHITE_COLOR)
+            screen.blit(score_text, (50, 150 + i * 40))
+
+        # Button to return to Main Menu
+        return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
+                                INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
+        pg.draw.rect(screen, RED_COLOR, return_button)
+        return_text = leaderboard_font.render('Back to Menu', True, WHITE_COLOR)
+        screen.blit(return_text, (return_button.x + (INGAME_BUTTON_WIDTH - return_text.get_width()) // 2,
+                                  return_button.y + (INGAME_BUTTON_HEIGHT - return_text.get_height()) // 2))
+
+        pg.display.flip()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if return_button.collidepoint(mouse_pos):
+                    return
+
+
+def vehicle_type_selection_screen(screen, vehicle_type):
+    # Paths to images for different types of the selected vehicle
+    VEHICLE_TYPES = {
+        "roadster": ["main-game contents/Vehicles/roadster1.png", "main-game contents/Vehicles/roadster2.png",
+                     "main-game contents/Vehicles/roadster3.png", "main-game contents/Vehicles/roadster4.png"],
+        "supercar": ["main-game contents/Vehicles/supercar1.png", "main-game contents/Vehicles/supercar2.png",
+                     "main-game contents/Vehicles/supercar3.png", "main-game contents/Vehicles/supercar4.png"],
+        "motorbike": ["main-game contents/Vehicles/motorbike1.png", "main-game contents/Vehicles/motorbike2.png",
+                      "main-game contents/Vehicles/motorbike3.png", "main-game contents/Vehicles/motorbike4.png"],
+        "SUV": ["main-game contents/Vehicles/SUV1.png", "main-game contents/Vehicles/SUV2.png",
+                "main-game contents/Vehicles/SUV3.png", "main-game contents/Vehicles/SUV4.png"]
+    }
+
+    vehicle_images = [pg.image.load(path).convert_alpha() for path in VEHICLE_TYPES[vehicle_type]]
+    scaled_vehicle_images = [pg.transform.scale(image, (50, 100)) for image in vehicle_images]  # Scale vehicle images
+
+    # Adjust the spacing between vehicles
+    vehicle_width = 50
+    vehicle_spacing = 250  # Increase the spacing here
+    num_vehicles = len(scaled_vehicle_images)
+    total_width = num_vehicles * vehicle_width + (num_vehicles - 1) * vehicle_spacing
+    start_x = (screen.get_width() - total_width) // 2  # Center the vehicles horizontally
+
+    vehicle_rects = [
+        image.get_rect(topleft=(start_x + i * (vehicle_width + vehicle_spacing), screen.get_height() // 2 - 50)) for
+        i, image in
+        enumerate(scaled_vehicle_images)]
+
+    selected_vehicle_index = None  # Index of the currently selected vehicle
+    hovered_vehicle_index = None  # Index of the currently hovered vehicle
+
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+
+        # Draw the vehicle images
+        for i, (image, rect) in enumerate(zip(scaled_vehicle_images, vehicle_rects)):
+            screen.blit(image, rect)
+            if i == selected_vehicle_index:
+                # Highlight the selected vehicle
+                pg.draw.rect(screen, (255, 255, 0), rect, 3)  # Yellow border
+            elif i == hovered_vehicle_index:
+                # Highlight the hovered vehicle
+                pg.draw.rect(screen, (0, 255, 0), rect, 3)  # Green border
+
+        # Draw the selection prompt text
+        font = pg.font.SysFont('Arial', 30)
+        text = font.render(f"Select {vehicle_type.capitalize()} Type: Click on the vehicle to choose", True,
+                           (255, 255, 255))
+        screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                for i, rect in enumerate(vehicle_rects):
+                    if rect.collidepoint(mouse_pos):
+                        selected_vehicle_index = i
+                        return VEHICLE_TYPES[vehicle_type][i]  # Return the path of the selected vehicle
+
+            if event.type == pg.MOUSEMOTION:
+                mouse_pos = event.pos
+                hovered_vehicle_index = None
+                for i, rect in enumerate(vehicle_rects):
+                    if rect.collidepoint(mouse_pos):
+                        hovered_vehicle_index = i
+
+        pg.display.flip()
+
+
+def vehicle_selection_screen(screen):
+    # Vehicle type image paths
+    VEHICLE_TYPES = ["roadster", "supercar", "motorbike", "SUV"]
+    VEHICLE_IMAGES = {
+        "roadster": "main-game contents/Vehicles/roadster1.png",
+        "supercar": "main-game contents/Vehicles/supercar1.png",
+        "motorbike": "main-game contents/Vehicles/motorbike2.png",
+        "SUV": "main-game contents/Vehicles/SUV1.png"
+    }
+
+    # Load and scale vehicle images
+    vehicle_images = [pg.image.load(VEHICLE_IMAGES[vehicle_type]).convert_alpha() for vehicle_type in VEHICLE_TYPES]
+    scaled_vehicle_images = [pg.transform.scale(image, (50, 100)) for image in vehicle_images]  # Scale vehicle images
+    vehicle_rects = [image.get_rect(center=(200 + i * 250, screen.get_height() // 2)) for i, image in
+                     enumerate(scaled_vehicle_images)]
+
+    selected_vehicle_type = None  # Currently selected vehicle type
+    hovered_vehicle_type = None  # Currently hovered vehicle type
+
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+
+        # Draw the vehicle type images
+        for i, (image, rect) in enumerate(zip(scaled_vehicle_images, vehicle_rects)):
+            screen.blit(image, rect)
+            if VEHICLE_TYPES[i] == selected_vehicle_type:
+                # Highlight the selected vehicle type
+                pg.draw.rect(screen, (255, 255, 0), rect, 3)  # Yellow border
+            elif VEHICLE_TYPES[i] == hovered_vehicle_type:
+                # Highlight the hovered vehicle type
+                pg.draw.rect(screen, (0, 255, 0), rect, 3)  # Green border
+
+        # Draw the selection prompt text
+        font = pg.font.SysFont('Arial', 50)
+        text = font.render("Select Vehicle Type: Click on the vehicle to choose", True, (255, 255, 255))
+        screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return
+
+            if event.type == pg.MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                for i, rect in enumerate(vehicle_rects):
+                    if rect.collidepoint(mouse_pos):
+                        selected_vehicle_type = VEHICLE_TYPES[i]
+                        # Proceed to the specific type selection screen
+                        selected_vehicle_path = vehicle_type_selection_screen(screen, selected_vehicle_type)
+                        if selected_vehicle_path:
+                            return selected_vehicle_path  # Return the path of the final selected vehicle
+
+            if event.type == pg.MOUSEMOTION:
+                mouse_pos = event.pos
+                hovered_vehicle_type = None
+                for i, rect in enumerate(vehicle_rects):
+                    if rect.collidepoint(mouse_pos):
+                        hovered_vehicle_type = VEHICLE_TYPES[i]
+
+        pg.display.flip()
+
+
+def main_menu_display():
+    pg.init()
+    pg.display.set_caption('Top-Down Race')
+    screen = pg.display.set_mode((1280, 720))
+    bgm_manager = BackgroundMusic(BGM_LOBBY)
+    bgm_manager.play_random()
+    main_menu(screen)
+
+
 def main():
     # Initialize the game
-    pg.init()
-    screen = pg.display.set_mode((1280, 720))
-    font = pg.font.Font(None, 36)
+    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pg.display.set_caption('Top-Down Race')
+    font = pg.font.Font(None, 36)
     clock = pg.time.Clock()
+    # Display the vehicle selection screen and get the selected vehicle
+    selected_vehicle_path = vehicle_selection_screen(screen)
+    if selected_vehicle_path is None:
+        main_menu_display()
+        return
     running = True
     dt = 0
     paused = False
@@ -234,7 +560,7 @@ def main():
     tree_props_pos_y2 = -723
     obstacle_x_pos_1 = 390
     obstacle_x_pos_2 = 900
-    player = Player(random.choice(VEHICLES), (screen.get_width() / 2, screen.get_height() / 2))
+    player = Player(selected_vehicle_path, (screen.get_width() / 2, screen.get_height() / 2))
     pg.mixer.Sound(random.choice(BGM)).play(-1).set_volume(0.6)
     obstacle_images = [pg.transform.scale(pg.image.load(obstacle), (50, 50)) for obstacle in OBSTACLES]
     obstacles = []
@@ -258,8 +584,8 @@ def main():
     speed_increase_interval = 15000  # Interval to increase speed (in milliseconds)
     last_speed_increase_time = pg.time.get_ticks()
     # Define border rectangles
-    left_border = pg.Rect(0, 0, 353, 720)
-    right_border = pg.Rect(935, 0, 353, 720)
+    left_border = pg.Rect(0, 0, 353, SCREEN_HEIGHT)
+    right_border = pg.Rect(935, 0, 353, SCREEN_HEIGHT)
 
     def display_timers(screen, player, score, font):
         current_time = pg.time.get_ticks()
@@ -314,7 +640,7 @@ def main():
             speed_platform_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
     def draw_border():
-        border = pg.Surface((353, 720), pg.SRCALPHA).convert()
+        border = pg.Surface((353, SCREEN_HEIGHT), pg.SRCALPHA).convert()
         screen.blit(border, (0, 0))
         screen.blit(border, (935, 0))
 
@@ -374,6 +700,12 @@ def main():
                         movement_sounds.play("s")
                     elif event.key == pg.K_d:
                         movement_sounds.play("d")
+                if event.key == pg.K_UP:
+                    bgm_manager.set_volume(0.1)
+                    movement_sounds.set_volume(0.1)
+                elif event.key == pg.K_DOWN:
+                    bgm_manager.set_volume(-0.1)
+                    movement_sounds.set_volume(-0.1)
             elif event.type == pg.KEYUP and not paused:
                 if event.key == pg.K_w:
                     movement_sounds.stop("w")
@@ -480,10 +812,6 @@ def main():
                 player.pos.x -= 300 * dt * speed_modifier
             if keys[pg.K_d]:
                 player.pos.x += 300 * dt * speed_modifier
-            if keys[pg.K_l]:
-                vehicle_choice = random.choice(VEHICLES)
-                player.image = pg.image.load(vehicle_choice).convert_alpha()
-                player.image = pg.transform.scale(player.image, (PLAYER_SIZE_X, PLAYER_SIZE_Y))
 
             if not (keys[pg.K_w] or keys[pg.K_a] or keys[pg.K_s] or keys[pg.K_d]):
                 movement_sounds.stop_all()
@@ -501,9 +829,15 @@ def main():
                 scroll_speed += 1
                 last_speed_increase_time = current_time
 
+            if (player.pos.x < -100 or player.pos.x > SCREEN_WIDTH or player.pos.y < 0 or player.pos.y >
+                    (SCREEN_HEIGHT + 150) - PLAYER_SIZE_Y):
+                bgm_manager.stop()
+                movement_sounds.stop_all()
+                display_race_result(screen, score.score)
+                return
+
             pg.display.flip()
             dt = clock.tick(60) / 1000
-
 
     pg.display.flip()
     movement_sounds.stop_all()
@@ -512,4 +846,4 @@ def main():
     pg.quit()
 
 
-main()
+main_menu_display()
