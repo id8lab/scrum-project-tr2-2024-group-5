@@ -34,6 +34,7 @@ BGM = ["main-game contents/Audio/bgm1.mp3", "main-game contents/Audio/bgm2.mp3",
        "main-game contents/Audio/bgm3.mp3", "main-game contents/Audio/bgm4.mp3"]
 BGM_LOBBY = ["main-game contents/Audio/lobby.mp3"]
 
+
 POWER_UPS = {
     "invincibility": "main-game contents/PowerUps/invincibility.png",
     "point_up": "main-game contents/PowerUps/point_up.png",
@@ -63,6 +64,27 @@ class Score:
     def reset(self):
         self.score = 0
         self.last_update_time = pg.time.get_ticks()
+
+LEADERBOARD_FILE = "leaderboard.json"
+
+def save_score(score):
+    try:
+        # 尝试加载现有的排行榜
+        with open(LEADERBOARD_FILE, "r") as file:
+            leaderboard = json.load(file)
+    except FileNotFoundError:
+        # 如果文件不存在，则创建一个空的排行榜
+        leaderboard = []
+
+    # 将新得分添加到排行榜中
+    leaderboard.append(score)
+
+    # 排序并保留前 5 名
+    leaderboard = sorted(leaderboard, reverse=True)[:5]
+
+    # 将更新后的排行榜保存回文件
+    with open(LEADERBOARD_FILE, "w") as file:
+        json.dump(leaderboard, file)
 
 
 LEADERBOARD_FILE = "leaderboard.json"
@@ -164,13 +186,6 @@ class MovementSounds:
         pg.mixer.music.set_volume(self.volume)
 
 
-def display_race_result(screen, score):
-    screen.fill((0, 0, 0))
-
-    # 保存分数
-    save_score(score)
-
-
 class PowerUp:
     def __init__(self, power_up_type, image_path, position):
         self.type = power_up_type
@@ -196,6 +211,7 @@ class PowerUp:
 
 def display_race_result(screen, score):
     screen.fill((0, 0, 0))
+    save_score(score)
 
     # Create a larger font for the result and score
     large_font = pg.font.SysFont('Arial', 50)
@@ -587,6 +603,7 @@ def main():
     left_border = pg.Rect(0, 0, 353, SCREEN_HEIGHT)
     right_border = pg.Rect(935, 0, 353, SCREEN_HEIGHT)
 
+
     def display_timers(screen, player, score, font):
         current_time = pg.time.get_ticks()
         invincibility_time_left = max(0, player.invincible_until - current_time)
@@ -603,6 +620,7 @@ def main():
         power_up_image = POWER_UPS[power_up_type]
         power_up = PowerUp(power_up_type, power_up_image, (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50))
         power_ups.append(power_up)
+
 
     def draw_pause_icon():
         pause_icon = pg.image.load('main-game contents/Icons/Paused.png').convert_alpha()
