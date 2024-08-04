@@ -102,9 +102,12 @@ class Player:
     def get_rect(self):
         return self.image.get_rect(topleft=self.pos)
 
+    def is_invincible(self):
+        return pg.time.get_ticks() < self.invincible_until
+
     def reduce_health(self):
-        self.health -= 1
-        return self.health
+        if not self.is_invincible():
+            self.health -= 1
 
 
 class BackgroundMusic:
@@ -758,12 +761,12 @@ def main():
                 if obstacle_rect.top > screen.get_height():
                     obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
                 screen.blit(obstacle_image, obstacle_rect)
-                if obstacle_rect.colliderect(player.get_rect()):
-                    player.reduce_health()
-                    print(f"Collision detected! Health: {player.health}")
-                    if player.health <= 0:
-                        running = False
-                    obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+                if not player.is_invincible():
+                    if obstacle_rect.colliderect(player.get_rect()):
+                        player.reduce_health()
+                        if player.health <= 0:
+                            running = False
+                        obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
             mud_puddle_rect.y += scroll_speed
             speed_platform_rect.y += scroll_speed
