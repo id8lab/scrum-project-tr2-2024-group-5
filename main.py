@@ -53,6 +53,8 @@ class Score:
 
     def update(self, current_time, increment=1, interval=1000):
         if (current_time - self.last_update_time) >= interval:
+            if current_time <= self.double_points_until:
+                increment *= 2
             self.score += increment
             self.last_update_time = current_time
 
