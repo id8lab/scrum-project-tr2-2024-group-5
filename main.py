@@ -168,7 +168,7 @@ class PowerUp:
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
-    def apply_effect(self, player, score, obstacles, spawn_times):
+    def apply_effect(self, player, score):
         if self.type == "invincibility":
             player.invincible_until = pg.time.get_ticks() + 5000  # 5 seconds
         elif self.type == "point_up":
@@ -310,7 +310,7 @@ def controls(screen):
         # Controls and Volume Settings Placeholder
         controls_text = settings_font.render("Gameplay: W, A, S, D to move. ESC to pause.",
                                              True, WHITE_COLOR)
-        volume_text = settings_font.render("Volume Settings: Use the Left (decrease) and Right (increase)"
+        volume_text = settings_font.render("Volume Settings: Use the Down (decrease) and Up (increase)"
                                            "arrow keys to adjust the volume.", True, WHITE_COLOR)
         screen.blit(controls_text, (50, 150))
         screen.blit(volume_text, (50, 200))
@@ -724,6 +724,17 @@ def main():
             draw_background()
             screen.blit(mud_puddle_image, mud_puddle_rect)
             screen.blit(speed_platform_image, speed_platform_rect)
+            for obstacle_image, obstacle_rect in obstacles:
+                obstacle_rect.y += scroll_speed
+                if obstacle_rect.top > screen.get_height():
+                    obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
+                screen.blit(obstacle_image, obstacle_rect)
+                if not player.is_invincible():
+                    if obstacle_rect.colliderect(player.get_rect()):
+                        player.reduce_health()
+                        if player.health <= 0:
+                            running = False
+                        obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
             player.draw(screen)
             draw_trees()
             score.draw(screen)
@@ -740,7 +751,7 @@ def main():
                 else:
                     power_up.draw(screen)
                     if power_up.get_rect().colliderect(player.get_rect()):
-                        power_up.apply_effect(player, score, obstacles, spawn_times)
+                        power_up.apply_effect(player, score)
                         power_ups.remove(power_up)
 
             # Spawn power-ups periodically
@@ -757,18 +768,6 @@ def main():
                 elif (current_time - last_spawn_time) >= 12000 and entity_type == "speed_platform":
                     spawn_entity(entity_type)
                     spawn_times[entity_type] = current_time
-
-            for obstacle_image, obstacle_rect in obstacles:
-                obstacle_rect.y += scroll_speed
-                if obstacle_rect.top > screen.get_height():
-                    obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
-                screen.blit(obstacle_image, obstacle_rect)
-                if not player.is_invincible():
-                    if obstacle_rect.colliderect(player.get_rect()):
-                        player.reduce_health()
-                        if player.health <= 0:
-                            running = False
-                        obstacle_rect.midtop = (random.randint(obstacle_x_pos_1, obstacle_x_pos_2), -50)
 
             mud_puddle_rect.y += scroll_speed
             speed_platform_rect.y += scroll_speed
