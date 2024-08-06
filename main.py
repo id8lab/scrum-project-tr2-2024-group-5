@@ -319,7 +319,7 @@ def controls(screen):
                                              WHITE_COLOR)
         misc_text = settings_font.render("Mud puddle slows down your movement | Speed platform forces you to"
                                          " move up ", True, WHITE_COLOR)
-        road_text = settings_font.render("Don't go off road, you will pushed down to the bottom of the screen",
+        road_text = settings_font.render("Don't go off road, you will  be pushed down to the bottom of the screen",
                                          True, WHITE_COLOR)
         game_over_text = settings_font.render("Game over if you lose all of your lives or you went off screen",
                                               True, WHITE_COLOR)
