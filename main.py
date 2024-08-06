@@ -12,6 +12,7 @@ PLAYER_SIZE_Y = 160
 PLAYER_SIZE_X = 80
 INGAME_BUTTON_WIDTH = 200
 INGAME_BUTTON_HEIGHT = 60
+TARGET_SEQUENCE = ['r', 'e', 's', 'e', 't']
 
 # Define constants
 OBSTACLES = ["main-game contents/Obstacles/Wood.png", "main-game contents/Obstacles/crate.png",
@@ -330,11 +331,17 @@ def controls(screen):
                     return
 
 
+def check_sequence(buffer, sequence):  # For the leaderboard menu
+    """Check if the buffer ends with the target sequence."""
+    return buffer[-len(sequence):] == sequence
+
+
 def leaderboard_menu(screen):
     leaderboard_font = pg.font.SysFont('Arial', 30)
     leaderboard_background = pg.Surface(screen.get_size())
     leaderboard_background.fill((0, 0, 0))
     leaderboard_background.set_alpha(180)
+    key_buffer = []
 
     # 尝试加载排行榜
     try:
@@ -347,8 +354,11 @@ def leaderboard_menu(screen):
         screen.blit(leaderboard_background, (0, 0))
         font = pg.font.SysFont('Arial', 50)
         text = font.render("Leaderboard", True, WHITE_COLOR)
+        reset_text = font.render("Type 'reset' if you want to reset your leaderboard", True, WHITE_COLOR)
         text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
+        reset_rect = reset_text.get_rect(midtop=(screen.get_width() / 2, 380))
         screen.blit(text, text_rect)
+        screen.blit(reset_text, reset_rect)
 
         # Display top 5 scores
         for i, score in enumerate(top_scores):
@@ -368,6 +378,13 @@ def leaderboard_menu(screen):
                 mouse_pos = event.pos
                 if return_button.collidepoint(mouse_pos):
                     return
+            if event.type == pg.KEYDOWN:
+                key_buffer.append(event.unicode)
+                # Check if the key buffer matches the target sequence
+                if check_sequence(key_buffer, TARGET_SEQUENCE):
+                    top_scores = [0, 0, 0, 0, 0]
+                    with open(LEADERBOARD_FILE, "w") as file:
+                        json.dump(top_scores, file)
 
 
 def vehicle_type_selection_screen(screen, vehicle_type):
