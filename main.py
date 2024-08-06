@@ -710,9 +710,7 @@ def main():
                 if event.key == pg.K_ESCAPE:
                     paused = not paused
                 if not paused:
-                    if event.key == pg.K_w:
-                        movement_sounds.play("w")
-                    elif event.key == pg.K_a:
+                    if event.key == pg.K_a:
                         movement_sounds.play("a")
                     elif event.key == pg.K_s:
                         movement_sounds.play("s")
@@ -725,8 +723,6 @@ def main():
                     bgm_manager.set_volume(-0.1)
                     movement_sounds.set_volume(-0.1)
             elif event.type == pg.KEYUP and not paused:
-                if event.key == pg.K_w:
-                    movement_sounds.stop("w")
                 if event.key == pg.K_a:
                     movement_sounds.stop("a")
                 if event.key == pg.K_s:
@@ -821,8 +817,6 @@ def main():
             else:
                 speed_modifier = 1
 
-            if keys[pg.K_w]:
-                player.pos.y -= 400 * dt * speed_modifier
             if keys[pg.K_s]:
                 player.pos.y += 200 * dt * speed_modifier
             if keys[pg.K_a]:
