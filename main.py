@@ -308,13 +308,28 @@ def controls(screen):
         text_rect = text.get_rect(midtop=(screen.get_width() / 2, 50))
         screen.blit(text, text_rect)
 
-        # Controls and Volume Settings Placeholder
-        controls_text = settings_font.render("Gameplay: W, A, S, D to move. ESC to pause.",
-                                             True, WHITE_COLOR)
+        # Controls, Volume and Gameplay Info
+        controls_text = settings_font.render("Controls: A: Move left | S: Move down | D: Move right | "
+                                             "ESC to pause.", True, WHITE_COLOR)
         volume_text = settings_font.render("Volume Settings: Use the Down (decrease) and Up (increase)"
                                            "arrow keys to adjust the volume.", True, WHITE_COLOR)
+        gameplay_text = settings_font.render("Gameplay:",
+                                             True, WHITE_COLOR)
+        obstacle_text = settings_font.render(" Avoid Obstacles (Rocks, Tree Logs, Wood Crate)", True,
+                                             WHITE_COLOR)
+        misc_text = settings_font.render("Mud puddle slows down your movement | Speed platform forces you to"
+                                         " move up ", True, WHITE_COLOR)
+        road_text = settings_font.render("Don't go off road, you will pushed down to the bottom of the screen",
+                                         True, WHITE_COLOR)
+        game_over_text = settings_font.render("Game over if you lose all of your lives or you went off screen",
+                                              True, WHITE_COLOR)
         screen.blit(controls_text, (50, 150))
         screen.blit(volume_text, (50, 200))
+        screen.blit(gameplay_text, (50, 250))
+        screen.blit(obstacle_text, (50, 300))
+        screen.blit(misc_text, (50, 350))
+        screen.blit(road_text, (50, 400))
+        screen.blit(game_over_text, (50, 450))
 
         # Button to return to Main Menu
         return_button = draw_return_button(font, screen, text)
@@ -465,8 +480,8 @@ def vehicle_type_selection_screen(screen, vehicle_type):
 
 
 def draw_return_button(font, screen, text):
-    screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
-    return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 120,
+    screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 65))
+    return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 140,
                             INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
     pg.draw.rect(screen, RED_COLOR, return_button)
     return_text = font.render('Back', True, WHITE_COLOR)
