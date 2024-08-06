@@ -315,7 +315,7 @@ def controls(screen):
                                            "arrow keys to adjust the volume.", True, WHITE_COLOR)
         gameplay_text = settings_font.render("Gameplay:",
                                              True, WHITE_COLOR)
-        obstacle_text = settings_font.render(" Avoid Obstacles (Rocks, Tree Logs, Wood Crate)", True,
+        obstacle_text = settings_font.render("Avoid Obstacles (Rocks, Tree Logs, Wood Crate)", True,
                                              WHITE_COLOR)
         misc_text = settings_font.render("Mud puddle slows down your movement | Speed platform forces you to"
                                          " move up ", True, WHITE_COLOR)
