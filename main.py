@@ -480,7 +480,6 @@ def vehicle_type_selection_screen(screen, vehicle_type):
 
 
 def draw_return_button(font, screen, text):
-    screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 65))
     return_button = pg.Rect(screen.get_width() // 2 - INGAME_BUTTON_WIDTH // 2, screen.get_height() // 2 + 140,
                             INGAME_BUTTON_WIDTH, INGAME_BUTTON_HEIGHT)
     pg.draw.rect(screen, RED_COLOR, return_button)
