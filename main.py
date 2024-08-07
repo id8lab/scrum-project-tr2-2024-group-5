@@ -451,6 +451,7 @@ def vehicle_type_selection_screen(screen, vehicle_type):
         font = pg.font.SysFont('Arial', 30)
         text = font.render(f"Select {vehicle_type.capitalize()} Type: Click on the vehicle to choose", True,
                            (255, 255, 255))
+        screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 50))
         return_button = draw_return_button(font, screen, text)
 
         for event in pg.event.get():
